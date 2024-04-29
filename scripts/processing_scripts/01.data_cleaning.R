@@ -78,6 +78,8 @@ height_summ1 <- height_tidy %>%
   ungroup()
   
 # this is not an elegant solution, but it works!
+# get the mean height of early, mid, and late sampling periods 
+# as a separate data frame; can use inner join to merge into a single dataset
 height_summ_earl <- height_summ1 %>%
   dplyr::filter(Session == "early") %>%
   tidyr::pivot_wider(names_from = Session, values_from = mean_height) %>%
@@ -94,19 +96,27 @@ height_summ_late <- height_summ1 %>%
   dplyr::select(Richness_ID, Density_ID, Rep, Spp, late_height = late)
 
 height_summ <- height_summ_earl %>%
-  inner_join(height_summ_mid, by = c("Richness_ID", "Density_ID", "Rep", "Spp")) %>%
-  inner_join(height_summ_late, by = c("Richness_ID", "Density_ID", "Rep", "Spp"))
+  inner_join(
+    height_summ_mid, 
+    by = c("Richness_ID", "Density_ID", "Rep", "Spp")
+    ) %>%
+  inner_join(
+    height_summ_late, 
+    by = c("Richness_ID", "Density_ID", "Rep", "Spp")
+    )
 
+# calculate time difference (t2 - t1) between late and early sampling
+# for the relative growth rate (log(r2) - log(r1))/t2 - t1
 time_diff_earl_late <- as.numeric(ymd("2023-06-22") - ymd("2023-04-18"))
   
+# calculate relative growth rate of height (rgr) as a column variable 
 height_final <- height_summ %>%
   mutate(
     log_early_height = log(early_height + 1),
     log_late_height = log(late_height), 
     log_diff = log_late_height - log_early_height, 
     rgr_height = log_diff/time_diff_earl_late,
-    rgr_height =round(rgr_height, digits = 3)
+    rgr_height = round(rgr_height, digits = 3)
   ) 
-
 
 
