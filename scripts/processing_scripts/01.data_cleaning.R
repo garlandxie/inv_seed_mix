@@ -11,6 +11,28 @@ library(lubridate)  # for dealing with dates
 bm_raw <- read.csv(here("data", "input_data", "biomass.csv"))
 height_raw <- read.csv(here("data", "input_data", "height.csv"))
 
+# clean: invasive species ------------------------------------------------------
+
+# total biomass for Cirsium arvense
+biomass_ab_invasive <- bm_raw %>%
+  dplyr::filter(
+    Biomass_Type == "AB" &
+      Species_ID == "CIAR"
+  ) %>%
+  mutate(
+    Biomass_g = na_if(Biomass_g, "-"),
+    Biomass_g = as.numeric(Biomass_g), 
+    Biomass_mg = Biomass_g * 1000
+  ) %>%
+  group_by(Richness_ID, Density_ID, Rep) %>%
+  summarize(
+    mean_inv_bm = mean(Biomass_mg, na.rm = TRUE) %>% round(digits = 2), 
+    tot_inv_bm = sum(Biomass_mg, na.rm = TRUE),
+    num_invaders = n()
+  ) %>%
+  ungroup() %>%
+  arrange(Richness_ID, Density_ID, Rep)
+
 # clean: height ----------------------------------------------------------------
 
 height_tidy <- height_raw %>%
