@@ -128,12 +128,39 @@ leaf_area_tidy <- leaf_area_raw %>%
   mutate(
     Richness_ID = stringr::str_split_i(tray_id, pattern = "-", 1),
     Density_ID = stringr::str_split_i(tray_id, pattern = "-", 2),
-    Rep = stringr::str_split_i(tray_id, pattern = "-", 3))
-
-sla <- leaf_area_tidy %>%
-  dplyr::inner_join(
-    leaf_bm_raw, by = c(
-      "Richness_ID", "Density_ID", "Rep", "species", "ind", "leaf_rep")
+    Rep = stringr::str_split_i(tray_id, pattern = "-", 3)
     )
 
+sla <- leaf_area_tidy %>%
+  
+  # perform inner join to get the leaf biomass and area per individual specimen
+  dplyr::inner_join(
+    leaf_bm_raw, 
+    by = c("Richness_ID", "Density_ID", "Rep", "species", "ind", "leaf_rep")
+    ) %>%
+  
+  # select appropriate columns required to do the SLA calculations
+    dplyr::select(
+      Richness_ID, 
+      Density_ID, 
+      Rep, 
+      species, 
+      ind, 
+      leaf_rep,
+      leaf_area_cm2, 
+      biomass_mg
+      ) %>%
+  
+    # calculate specific leaf area (leaf_area_cm2/biomass_mg)
+    # per individual specimen
+    mutate(sla = leaf_area_cm2/biomass_mg, 
+           sla = round(sla, digits = 2)
+           ) 
 
+# save to disk -----------------------------------------------------------------
+
+write.csv(
+  sla,
+  file = here("data", "intermediate_data", "specific_leaf_area.csv"),
+  row.names = FALSE
+)
