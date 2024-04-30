@@ -5,11 +5,14 @@ library(ggplot2)    # for visualizing plots
 library(tidyr)      # for handling missing values
 library(tidyr)      # for replacing missing values
 library(lubridate)  # for dealing with dates
+library(stringr)    # for dealing with string characters
 
 # import -----------------------------------------------------------------------
 
 bm_raw <- read.csv(here("data", "input_data", "biomass.csv"))
 height_raw <- read.csv(here("data", "input_data", "height.csv"))
+leaf_area_raw <- read.csv(here("data", "input_data", "leaf_area.csv"))
+leaf_bm_raw <- read.csv(here("data", "input_data", "leaf_biomass.csv"))
 
 # clean: invasive species ------------------------------------------------------
 
@@ -118,5 +121,19 @@ height_final <- height_summ %>%
     rgr_height = log_diff/time_diff_earl_late,
     rgr_height = round(rgr_height, digits = 3)
   ) 
+
+# clean: specific leaf area ----------------------------------------------------
+
+leaf_area_tidy <- leaf_area_raw %>%
+  mutate(
+    Richness_ID = stringr::str_split_i(tray_id, pattern = "-", 1),
+    Density_ID = stringr::str_split_i(tray_id, pattern = "-", 2),
+    Rep = stringr::str_split_i(tray_id, pattern = "-", 3))
+
+sla <- leaf_area_tidy %>%
+  dplyr::inner_join(
+    leaf_bm_raw, by = c(
+      "Richness_ID", "Density_ID", "Rep", "species", "ind", "leaf_rep")
+    )
 
 
