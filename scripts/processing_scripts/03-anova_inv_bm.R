@@ -188,4 +188,50 @@ inv_bm %>%
     theme_bw()
 )
 
+# statistical analyses ----
+
+# change the values for invader monocultures
+# so that you can compare native monocultures + mixtures for the ANOVAs
+inv_bm_tidy <- inv_bm %>%
+  
+  mutate(
+    Density_ID = case_when(
+      Density_ID == "-" ~ "D0", 
+      TRUE ~ Density_ID),
+    
+    Richness_ID = case_when(
+      Richness_ID == "M1" & Density_ID == "D0" ~ "Inv", 
+      TRUE ~ Richness_ID)
+    ) %>%
+
+  mutate(
+    Richness_ID = factor(
+      Richness_ID, 
+      levels = c("Inv", "M1", "M2", "M4")),
+    
+    Density_ID = factor(
+      Density_ID, 
+      levels = c("D0", "D1", "D2", "D3")
+    )
+  )
+
+## total community-level biomass ---
+lm_tot_inv_bm <- lm(tot_inv_bm_mg ~ Richness_ID*Density_ID, data = inv_bm_tidy)
+
+# check assumptions for two-way ANOVA
+plot(lm_tot_inv_bm, 2) # normality of residuals
+plot(lm_tot_inv_bm, 1) # homogeneity of variance
+plot(lm_tot_inv_bm, 4) # influential outliers
+
+# refit model to stabilize variance
+# using a log (x+1) transformation
+lm_tot_inv_bm2 <- inv_bm_tidy %>%
+  mutate(log_tot_inv_bm = log(tot_inv_bm_mg + 1)) %>%
+  lm(log_tot_inv_bm ~ Richness_ID*Density_ID, data = .)
+
+# double-check assumptions for two-way ANOVA
+plot(lm_tot_inv_bm2, 2) # normality of residuals
+plot(lm_tot_inv_bm2, 1) # homogeneity of variance
+plot(lm_tot_inv_bm2, 4) # influential outliers
+
 
