@@ -216,7 +216,9 @@ inv_bm_tidy <- inv_bm %>%
   )
 
 ## total community-level biomass ---
-lm_tot_inv_bm <- lm(tot_inv_bm_mg ~ Richness_ID*Density_ID, data = inv_bm_tidy)
+lm_tot_inv_bm <- lm(
+  tot_inv_bm_mg ~ Richness_ID*Density_ID, 
+  data = inv_bm_tidy)
 
 # check assumptions for two-way ANOVA
 plot(lm_tot_inv_bm, 2) # normality of residuals
@@ -227,7 +229,8 @@ plot(lm_tot_inv_bm, 4) # influential outliers
 # using a log (x+1) transformation
 lm_tot_inv_bm2 <- inv_bm_tidy %>%
   mutate(log_tot_inv_bm = log(tot_inv_bm_mg + 1)) %>%
-  lm(log_tot_inv_bm ~ Richness_ID*Density_ID, data = .)
+  lm(log_tot_inv_bm ~ Richness_ID*Density_ID, 
+     data = .)
 
 # double-check assumptions for two-way ANOVA
 plot(lm_tot_inv_bm2, 2) # normality of residuals
