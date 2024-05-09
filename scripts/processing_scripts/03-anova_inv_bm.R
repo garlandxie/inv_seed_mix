@@ -9,16 +9,6 @@ inv_bm <- read.csv(here("data", "intermediate_data", "invader_biomass.csv"))
 
 # exploratory data analysis -----
 
-## sample size of treatments ----
-# to determine type of sum of squares (I, II, or III) required for ANOVA 
-inv_bm %>%
-  group_by(Richness_ID, Density_ID) %>%
-  summarize(
-    n_avg_bm = length(na.omit(mean_inv_bm_mg)),
-    n_tot_bm = length(na.omit(tot_inv_bm_mg)),
-    n_inv_ab = length(na.omit(num_invaders))
-  )
-
 ## outliers -----
 # reason: outliers increase the estimate of sample variance
 # decreasing the calculated F statistics for ANOVA's
@@ -267,5 +257,9 @@ plot(lm_log_inv_bm_minus_d0, 4) # influential outliers
 # run a type II ANOVA to account for unbalanced sample designs
 aov_t2_inv_bm <- car::Anova(lm_tot_inv_bm3, type = 2)
 
+## pairwise comparisons ----
 
-
+# calculate estimated marginal means
+# to account for unbalanced sample design
+ref_grid_inv_bm <- emmeans::ref_grid(lm_log_inv_bm_minus_d0)
+ref_grid_inv_bm@grid
