@@ -255,7 +255,7 @@ plot(lm_log_inv_bm_minus_d0, 4) # influential outliers
 ## two-way ANOVA ----
 
 # run a type II ANOVA to account for unbalanced sample designs
-aov_t2_inv_bm <- car::Anova(lm_tot_inv_bm3, type = 2)
+aov_t2_inv_bm <- car::Anova(lm_log_inv_bm_minus_d0, type = 2)
 
 ## pairwise comparisons ----
 
@@ -263,3 +263,16 @@ aov_t2_inv_bm <- car::Anova(lm_tot_inv_bm3, type = 2)
 # to account for unbalanced sample design
 ref_grid_inv_bm <- emmeans::ref_grid(lm_log_inv_bm_minus_d0)
 ref_grid_inv_bm@grid
+
+# visualize potential interactions before doing any statistical comparisons
+emmeans::emmip(lm_log_inv_bm_minus_d0, Richness ~ Density)
+
+# run pairwise comparisons
+EMM <- emmeans::emmeans(lm_log_inv_bm_minus_d0, ~Richness*Density)
+test(pairs(EMM, by = "Density"), by = NULL, adjust = "mvt")
+test(pairs(EMM, by = "Richness"), by = NULL, adjust = "mvt")
+
+
+
+
+
