@@ -9,7 +9,7 @@ inv_bm <- read.csv(here("data", "intermediate_data", "invader_biomass.csv"))
 
 # exploratory data analysis -----
 
-## check for sample size of density and richness treatments ----
+## sample size of treatments ----
 # to determine type of sum of squares (I, II, or III) required for ANOVA 
 inv_bm %>%
   group_by(Richness_ID, Density_ID) %>%
@@ -19,7 +19,7 @@ inv_bm %>%
     n_inv_ab = length(na.omit(num_invaders))
   )
 
-## check for outliers -----
+## outliers -----
 # reason: outliers increase the estimate of sample variance
 # decreasing the calculated F statistics for ANOVA's
 # lowering the chance of rejecting the null hypothesis 
@@ -53,7 +53,7 @@ inv_bm %>%
   ) + 
   theme(axis.text.y = element_blank())
 
-# check box-plots ----
+## box-plots ----
 # reason: visualize summary statistics to get a sense of median and spread
 # across seeding density and seeding richness treatments
 (plot_tot_inv_bm <- inv_bm %>%
@@ -266,3 +266,6 @@ plot(lm_log_inv_bm_minus_d0, 4) # influential outliers
 
 # run a type II ANOVA to account for unbalanced sample designs
 aov_t2_inv_bm <- car::Anova(lm_tot_inv_bm3, type = 2)
+
+
+
