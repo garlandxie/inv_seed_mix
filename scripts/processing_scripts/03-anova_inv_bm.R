@@ -236,34 +236,33 @@ inv_bm_minus_d0 <- inv_bm_tidy %>%
   mutate(Density = as.character(Density)) %>%
   dplyr::filter(Density %in% c("D1", "D2", "D3")) 
 
-lm_tot_inv_bm2 <- lm(
+lm_inv_bm_minus_d0 <- lm(
   tot_inv_bm_mg ~ Richness*Density, 
   data = inv_bm_minus_d0
   )
 
 # check assumptions for two-way ANOVA
-plot(lm_tot_inv_bm2, 2) # normality of residuals
-plot(lm_tot_inv_bm2, 1) # homogeneity of variance
-plot(lm_tot_inv_bm2, 4) # influential outliers
+plot(lm_inv_bm_minus_d0, 2) # normality of residuals
+plot(lm_inv_bm_minus_d0, 1) # homogeneity of variance
+plot(lm_inv_bm_minus_d0, 4) # influential outliers
 
 # refit model to stabilize variance
 # using a log (x+1) transformation
-inv_bm_minus_d0 <- mutate(inv_bm_minus_d0, 
+log_bm_minus_d0 <- mutate(inv_bm_minus_d0, 
   log_tot_inv_bm = log(tot_inv_bm_mg + 1)
   ) 
 
-lm_tot_inv_bm3 <- lm(
+lm_log_inv_bm_minus_d0 <- lm(
   log_tot_inv_bm ~ Richness*Density, 
-  data = inv_bm_minus_d0
+  data = log_bm_minus_d0 
 )
 
 # double-check assumptions for two-way ANOVA
-plot(lm_tot_inv_bm3, 2) # normality of residuals
-plot(lm_tot_inv_bm3, 1) # homogeneity of variance
-plot(lm_tot_inv_bm3, 4) # influential outliers
+plot(lm_log_inv_bm_minus_d0, 2) # normality of residuals
+plot(lm_log_inv_bm_minus_d0, 1) # homogeneity of variance
+plot(lm_log_inv_bm_minus_d0, 4) # influential outliers
 
 ## two-way ANOVA ----
 
 # run a type II ANOVA to account for unbalanced sample designs
 aov_t2_inv_bm <- car::Anova(lm_tot_inv_bm3, type = 2)
-
