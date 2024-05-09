@@ -90,94 +90,6 @@ inv_bm %>%
    theme_bw()
 )
 
-(plot_avg_inv_bm <- inv_bm %>%
-    mutate(
-      Density_ID = case_when(
-        Density_ID == "-"  ~ "20 C. arvense seeds only",
-        Density_ID == "D1" ~ "48 native + 20 C. arvense seeds",
-        Density_ID == "D2" ~ "200 native + 20 C. arvense seeds", 
-        Density_ID == "D3" ~ "400 native + 20 C. arvense seeds") %>%
-        factor(levels = c(
-          "20 C. arvense seeds only", 
-          "48 native + 20 C. arvense seeds", 
-          "200 native + 20 C. arvense seeds", 
-          "400 native + 20 C. arvense seeds")
-        )
-    ) %>%
-    
-    mutate(
-      Richness_ID = case_when(
-        Density_ID  == "20 invasive seeds"  ~ "Invasive-Only", 
-        Richness_ID == "M1" ~ "Native Monoculture", 
-        Richness_ID == "M2" ~ "2-species Mixture", 
-        Richness_ID == "M4" ~ "4-species Mixture", 
-        TRUE ~ Richness_ID
-      ), 
-      
-      Richness_ID = factor(Richness_ID, levels = c(
-        "Invasive-Only", 
-        "Native Monoculture", 
-        "2-species Mixture", 
-        "4-species Mixture")
-      )
-    ) %>%
-    ggplot(aes(x = Richness_ID, y = mean_inv_bm_mg)) +
-    geom_boxplot(
-      aes(fill = Density_ID), 
-      position = "dodge2"
-    ) + 
-    labs(
-      fill = "Sown Seed Density", 
-      x = NULL, 
-      y = "Average biomass (mg) of C. arvense"
-    ) + 
-    theme_bw()
-)
-
-(plot_ab_inv_bm <- inv_bm %>%
-    mutate(
-      Density_ID = case_when(
-        Density_ID == "-"  ~ "20 C. arvense seeds only",
-        Density_ID == "D1" ~ "48 native + 20 C. arvense seeds",
-        Density_ID == "D2" ~ "200 native + 20 C. arvense seeds", 
-        Density_ID == "D3" ~ "400 native + 20 C. arvense seeds") %>%
-        factor(levels = c(
-          "20 C. arvense seeds only", 
-          "48 native + 20 C. arvense seeds", 
-          "200 native + 20 C. arvense seeds", 
-          "400 native + 20 C. arvense seeds")
-        )
-    ) %>%
-    
-    mutate(
-      Richness_ID = case_when(
-        Density_ID  == "20 invasive seeds"  ~ "Invasive-Only", 
-        Richness_ID == "M1" ~ "Native Monoculture", 
-        Richness_ID == "M2" ~ "2-species Mixture", 
-        Richness_ID == "M4" ~ "4-species Mixture", 
-        TRUE ~ Richness_ID
-      ), 
-      
-      Richness_ID = factor(Richness_ID, levels = c(
-        "Invasive-Only", 
-        "Native Monoculture", 
-        "2-species Mixture", 
-        "4-species Mixture")
-      )
-    ) %>%
-    ggplot(aes(x = Richness_ID, y = num_invaders)) +
-    geom_boxplot(
-      aes(fill = Density_ID), 
-      position = "dodge2"
-    ) + 
-    labs(
-      fill = "Sown Seed Density", 
-      x = NULL, 
-      y = "Average Invader Abundance"
-    ) + 
-    theme_bw()
-)
-
 # statistical analyses ----
 
 # change the values for invader monocultures
@@ -269,10 +181,5 @@ emmeans::emmip(lm_log_inv_bm_minus_d0, Richness ~ Density)
 
 # run pairwise comparisons
 EMM <- emmeans::emmeans(lm_log_inv_bm_minus_d0, ~Richness*Density)
-test(pairs(EMM, by = "Density"), by = NULL, adjust = "mvt")
-test(pairs(EMM, by = "Richness"), by = NULL, adjust = "mvt")
-
-
-
-
-
+test(pairs(EMM, by = "Density"))
+test(pairs(EMM, by = "Richness"))
