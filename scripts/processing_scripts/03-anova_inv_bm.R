@@ -220,7 +220,8 @@ inv_bm_tidy <- inv_bm %>%
     Richness = Richness_ID
   )
 
-## total community-level biomass ----
+## model fit ----
+
 lm_tot_inv_bm1 <- lm(
   tot_inv_bm_mg ~ Richness*Density, 
   data = inv_bm_tidy)
@@ -260,6 +261,8 @@ lm_tot_inv_bm3 <- lm(
 plot(lm_tot_inv_bm3, 2) # normality of residuals
 plot(lm_tot_inv_bm3, 1) # homogeneity of variance
 plot(lm_tot_inv_bm3, 4) # influential outliers
+
+## two-way ANOVA ----
 
 # run a type II ANOVA to account for unbalanced sample designs
 aov_t2_inv_bm <- car::Anova(lm_tot_inv_bm3, type = 2)
