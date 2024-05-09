@@ -181,5 +181,32 @@ emmeans::emmip(lm_log_inv_bm_minus_d0, Richness ~ Density)
 
 # run pairwise comparisons
 EMM <- emmeans::emmeans(lm_log_inv_bm_minus_d0, ~Richness*Density)
-test(pairs(EMM, by = "Density"))
-test(pairs(EMM, by = "Richness"))
+pairs_dense <- test(pairs(EMM, by = "Density"))
+pairs_rich<- test(pairs(EMM, by = "Richness"))
+
+# clean datasets for placing into the supp info
+pairs_dense_df <- pairs_dense %>%
+  as.data.frame() %>%
+  rename(treatment = Density)
+
+pairs_rich_df <- pairs_rich %>%
+  as.data.frame() %>%
+  rename(treatment = Richness)
+
+table_s2 <- pairs_dense_df %>%
+  rbind(pairs_rich_df) %>%
+  mutate(
+    estimate = round(estimate, digits = 2),
+    SE = round(SE, digits = 2), 
+    t.ratio = round(t.ratio, digits = 2),
+    p.value = round(p.value, digits = 2)
+    )
+
+# save to disk ----
+
+write.csv(
+  table_s2, 
+  file = here("output", "data_appendix_output", "table_s2_pairwise_inv_bm.csv"),
+  row.names = FALSE
+)
+
