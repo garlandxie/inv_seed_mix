@@ -48,15 +48,33 @@ c_germ_perc_ciar <- c_germ %>%
 c_germ_perc_res <- c_germ %>% 
   filter(spp != "CIAR") %>%
   group_by(week, richness_id, density_id, rep) %>%
-  summarize(cum_germ_perc_res = sum(cum_germ_perc, na.rm = TRUE)) %>%
-  ungroup()
-
+  summarize(cum_germ_res = sum(cum_germ, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    sown_seeds = case_when(
+      density_id == "D1" ~ 48,
+      density_id == "D2" ~ 200, 
+      density_id == "D3" ~ 400
+      ), 
+    cum_germ_perc_res = cum_germ_res/sown_seeds,
+    cum_germ_perc_res = round(cum_germ_perc_res, digits = 2)
+  ) 
+  
 # percentage for all native species within a tray 
 c_germ_perc <- c_germ_perc_ciar %>% 
   inner_join(
     c_germ_perc_res, 
     by = c("week", "richness_id", "density_id", "rep")
-    )
+    ) %>%
+  dplyr::select(
+    week, 
+    richness_id, 
+    density_id, 
+    rep,
+    sown_seeds = sown_seeds.y, 
+    cum_germ_perc_ciar, 
+    cum_germ_perc_res
+  )
 
 # for data visualizing
 c_germ_perc_tidy <- c_germ %>%
@@ -148,21 +166,31 @@ c_germ_perc_tidy %>%
   facet_wrap(density_id~richness_id) + 
   theme_bw() 
 
+# some analyses ----
+c_germ_w12 <- dplyr::filter(c_germ_perc, week == 12) 
+glm_perc_ciar <- glm(
+  cum_germ_perc_ciar ~ richness_id*density_id, 
+  family = binomial(link = "logit"), 
+  data = c_germ_w12
+)
+
+sum(residuals(glm_perc_ciar, "pearson")^2) / glm_perc_ciar$df.residual
+
+glm_perc_ciar2 <- glm(
+  cum_germ_perc_ciar ~ richness_id*density_id, 
+  family = quasibinomial(link = "logit"), 
+  data = c_germ_w12
+)
+
+car::Anova(glm_perc_ciar2, type = "II")
+
 # save to disk -----
 
 write.csv(
-  c_germ_tidy, 
+  c_germ_perc, 
   file = here("data", "intermediate_data", "c_germ_clean.csv")
 )
 
-write.csv(
-  c_germ_perc_ciar, 
-  file = here("data", "intermediate_data", "c_germ_perc_clean.csv")
-)
 
-write.csv(
-  c_germ_perc_res, 
-  file = here("data", "intermediate_data", "c_germ_perc_res.csv")
-)
 
 
