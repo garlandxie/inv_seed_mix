@@ -1,8 +1,7 @@
 # libraries -----
-library(here)
-library(dplyr)
-library(ggplot2)
-library(lubridate)
+library(here)       # for creating relative file-paths
+library(dplyr)      # for manipulating data 
+library(ggplot2)    # for visualizing data  
 
 # import ----
 c_germ <- read.csv(here("data", "input_data", "cumulative_germination.csv"))
