@@ -110,6 +110,7 @@ c_germ_tidy %>%
     density_id %in% c("D1", "D2", "D3")
     ) %>%
   ggplot() +
+  geom_line(aes(x = week, y = mean_cum_germ_ciar), col = "purple") +
   geom_line(aes(x = week, y = mean_cum_germ_oebi), col = "orange") + 
   geom_line(aes(x = week, y = mean_cum_germ_ruhi), col = "red") + 
   geom_line(aes(x = week, y = mean_cum_germ_ange), col = "blue") + 
