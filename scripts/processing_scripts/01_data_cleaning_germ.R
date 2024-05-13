@@ -37,11 +37,23 @@ c_germ_tidy <- c_germ %>%
     ) 
 
 ## cumulative germination (as a percentage) ----
-c_germ_perc_tidy <- c_germ %>%
+c_germ_perc_ciar <- c_germ %>%
+  filter(spp == "CIAR") %>%
   group_by(week, richness_id, density_id, rep) %>%
   tidyr::pivot_wider(values_from = cum_germ_perc, names_from = spp) %>%
   ungroup() %>%
-  dplyr::select(
+  rename(cum_germ_perc_ciar = CIAR)
+
+c_germ_perc_res <- c_germ %>% 
+  filter(spp != "CIAR") %>%
+  group_by(week, richness_id, density_id, rep) %>%
+  summarize(cum_germ_perc_res = sum(cum_germ_perc, na.rm = TRUE)) %>%
+  ungroup()
+  
+c_germ_perc <- c_germ_perc_ciar %>% 
+  inner_join(c_germ_perc_res, by = c("week", "richness_id", "density_id", "rep"))
+
+dplyr::select(
     week, 
     richness_id, 
     density_id, 
@@ -143,8 +155,13 @@ write.csv(
 )
 
 write.csv(
-  c_germ_perc_tidy, 
+  c_germ_perc_ciar, 
   file = here("data", "intermediate_data", "c_germ_perc_clean.csv")
+)
+
+write.csv(
+  c_germ_perc_res, 
+  file = here("data", "intermediate_data", "c_germ_perc_res.csv")
 )
 
 
