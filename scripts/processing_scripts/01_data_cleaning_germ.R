@@ -54,9 +54,12 @@ c_germ_perc_res <- c_germ %>%
 
 # percentage for all native species within a tray 
 c_germ_perc <- c_germ_perc_ciar %>% 
-  inner_join(c_germ_perc_res, by = c("week", "richness_id", "density_id", "rep"))
+  inner_join(
+    c_germ_perc_res, 
+    by = c("week", "richness_id", "density_id", "rep")
+    )
 
-
+# for data visualizing
 c_germ_perc_tidy <- c_germ %>%
   group_by(week, richness_id, density_id, rep) %>%
   tidyr::pivot_wider(values_from = cum_germ, names_from = spp) %>%
@@ -143,7 +146,6 @@ c_germ_perc_tidy %>%
   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "grey") + 
   labs(x = "Week of Observation", y = "Cumulative germination") + 
   facet_wrap(density_id~richness_id) + 
-  ylim(0, 0.1) + 
   theme_bw() 
 
 # save to disk -----
