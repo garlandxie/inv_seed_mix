@@ -174,6 +174,22 @@ sla <- leaf_area_tidy %>%
            sla = round(sla, digits = 2)
            ) 
 
+# clean: resident community biomass --------------------------------------------
+
+biomass_ab_res <- bm_raw %>%
+  dplyr::filter(
+    Biomass_Type == "AB" &
+      Species_ID != "CIAR"
+  ) %>%
+  mutate(
+    Biomass_g = na_if(Biomass_g, "-"),
+    Biomass_g = as.numeric(Biomass_g), 
+    Biomass_mg = Biomass_g * 1000
+  ) %>%
+  group_by(Richness_ID, Density_ID, Rep) %>%
+  summarize(res_comm_biomass_mg = sum(Biomass_mg, na.rm = TRUE)) %>%
+  ungroup()
+
 # save to disk -----------------------------------------------------------------
 
 write.csv(
@@ -185,5 +201,12 @@ write.csv(
 write.csv(
   biomass_ab_invasive, 
   file = here("data", "intermediate_data", "invader_biomass.csv"),
+  row.names = FALSE
+)
+
+
+write.csv(
+  biomass_ab_res, 
+  file = here("data", "intermediate_data", "resident_biomass.csv"),
   row.names = FALSE
 )
