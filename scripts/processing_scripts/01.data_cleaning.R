@@ -13,6 +13,7 @@ bm_raw <- read.csv(here("data", "input_data", "biomass.csv"))
 height_raw <- read.csv(here("data", "input_data", "height.csv"))
 leaf_area_raw <- read.csv(here("data", "input_data", "leaf_area.csv"))
 leaf_bm_raw <- read.csv(here("data", "input_data", "leaf_biomass.csv"))
+c_germ <- read.csv(here("data", "input_data", "cumulative_germination.csv"))
 
 # clean: invasive species ------------------------------------------------------
 
@@ -189,6 +190,47 @@ biomass_ab_res <- bm_raw %>%
   group_by(Richness_ID, Density_ID, Rep) %>%
   summarize(res_comm_biomass_mg = sum(Biomass_mg, na.rm = TRUE)) %>%
   ungroup()
+
+# clean: cumulative percentage germination ------------------------------------
+
+# invader-only
+c_germ_perc_ciar <- c_germ %>%
+  filter(spp == "CIAR") %>%
+  group_by(week, richness_id, density_id, rep) %>%
+  tidyr::pivot_wider(values_from = cum_germ_perc, names_from = spp) %>%
+  ungroup() %>%
+  rename(cum_germ_perc_ciar = CIAR)
+
+c_germ_perc_res <- c_germ %>% 
+  filter(spp != "CIAR") %>%
+  group_by(week, richness_id, density_id, rep) %>%
+  summarize(cum_germ_res = sum(cum_germ, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    sown_seeds = case_when(
+      density_id == "D1" ~ 48,
+      density_id == "D2" ~ 200, 
+      density_id == "D3" ~ 400
+    ), 
+    cum_germ_perc_res = cum_germ_res/sown_seeds,
+    cum_germ_perc_res = round(cum_germ_perc_res, digits = 2)
+  ) 
+
+# percentage for all native species within a tray 
+c_germ_perc <- c_germ_perc_ciar %>% 
+  inner_join(
+    c_germ_perc_res, 
+    by = c("week", "richness_id", "density_id", "rep")
+  ) %>%
+  dplyr::select(
+    week, 
+    richness_id, 
+    density_id, 
+    rep,
+    sown_seeds = sown_seeds.y, 
+    cum_germ_perc_ciar, 
+    cum_germ_perc_res
+  )
 
 # save to disk -----------------------------------------------------------------
 
