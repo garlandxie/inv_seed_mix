@@ -232,6 +232,10 @@ c_germ_perc <- c_germ_perc_ciar %>%
     cum_germ_perc_res
   )
 
+# for now, obtain the cumulative percentage germination 
+# at the end of the experiment 
+c_germ_w12 <- dplyr::filter(c_germ_perc, week == 12) 
+
 # save to disk -----------------------------------------------------------------
 
 write.csv(
@@ -246,6 +250,10 @@ write.csv(
   row.names = FALSE
 )
 
+write.csv(
+  c_germ_w12, 
+  file = here("data", "intermediate_data", "c_germ_week12.csv")
+)
 
 write.csv(
   biomass_ab_res, 
