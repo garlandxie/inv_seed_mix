@@ -240,11 +240,7 @@ c_germ_w12 <- dplyr::filter(c_germ_perc, week == 12)
 
 # save to disk -----------------------------------------------------------------
 
-write.csv(
-  sla,
-  file = here("data", "intermediate_data", "specific_leaf_area.csv"),
-  row.names = FALSE
-)
+## invader biomass -------------------------------------------------------------
 
 write.csv(
   biomass_ab_invasive, 
@@ -252,13 +248,35 @@ write.csv(
   row.names = FALSE
 )
 
+## height ----------------------------------------------------------------------
+
 write.csv(
-  c_germ_w12, 
-  file = here("data", "intermediate_data", "c_germ_week12.csv")
+  final_height, 
+  file = here("data", "intermediate_data", "rgr_height.csv"),
+  row.names = FALSE
 )
+
+## specific leaf area ----------------------------------------------------------
+
+write.csv(
+  sla,
+  file = here("data", "intermediate_data", "specific_leaf_area.csv"),
+  row.names = FALSE
+)
+
+## resident community biomass --------------------------------------------------
 
 write.csv(
   biomass_ab_res, 
   file = here("data", "intermediate_data", "resident_biomass.csv"),
   row.names = FALSE
 )
+
+## cumulative percentage germination -------------------------------------------
+
+write.csv(
+  c_germ_w12, 
+  file = here("data", "intermediate_data", "c_germ_week12.csv")
+)
+
+
