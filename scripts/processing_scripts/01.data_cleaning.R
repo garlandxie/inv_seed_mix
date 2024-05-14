@@ -15,7 +15,9 @@ leaf_area_raw <- read.csv(here("data", "input_data", "leaf_area.csv"))
 leaf_bm_raw <- read.csv(here("data", "input_data", "leaf_biomass.csv"))
 c_germ <- read.csv(here("data", "input_data", "cumulative_germination.csv"))
 
-# clean: invasive species ------------------------------------------------------
+# data cleaning ----------------------------------------------------------------
+
+## invasive biomass ------------------------------------------------------------
 
 # total biomass for Cirsium arvense
 biomass_ab_invasive <- bm_raw %>%
@@ -54,7 +56,7 @@ biomass_ab_invasive$tot_inv_bm_mg[which(
   biomass_ab_invasive$Density_ID == "D2" &
   biomass_ab_invasive$Rep == "5")] <- NA
 
-# clean: height ----------------------------------------------------------------
+## height ----------------------------------------------------------------------
 
 height_tidy <- height_raw %>%
   mutate(
@@ -140,7 +142,7 @@ height_final <- height_summ %>%
     rgr_height = round(rgr_height, digits = 3)
   ) 
 
-# clean: specific leaf area ----------------------------------------------------
+## specific leaf area ----------------------------------------------------------
 
 leaf_area_tidy <- leaf_area_raw %>%
   mutate(
@@ -175,7 +177,7 @@ sla <- leaf_area_tidy %>%
            sla = round(sla, digits = 2)
            ) 
 
-# clean: resident community biomass --------------------------------------------
+## resident community biomass --------------------------------------------------
 
 biomass_ab_res <- bm_raw %>%
   dplyr::filter(
@@ -191,7 +193,7 @@ biomass_ab_res <- bm_raw %>%
   summarize(res_comm_biomass_mg = sum(Biomass_mg, na.rm = TRUE)) %>%
   ungroup()
 
-# clean: cumulative percentage germination ------------------------------------
+## cumulative percentage germination -------------------------------------------
 
 # invader-only
 c_germ_perc_ciar <- c_germ %>%
