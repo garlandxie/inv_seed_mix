@@ -13,7 +13,7 @@ bm_raw <- read.csv(here("data", "input_data", "biomass.csv"))
 height_raw <- read.csv(here("data", "input_data", "height.csv"))
 leaf_area_raw <- read.csv(here("data", "input_data", "leaf_area.csv"))
 leaf_bm_raw <- read.csv(here("data", "input_data", "leaf_biomass.csv"))
-c_germ <- read.csv(here("data", "input_data", "cumulative_germination.csv"))
+c_germ_raw <- read.csv(here("data", "input_data", "cumulative_germination.csv"))
 
 # data cleaning ----------------------------------------------------------------
 
@@ -196,14 +196,14 @@ biomass_ab_res <- bm_raw %>%
 ## cumulative percentage germination -------------------------------------------
 
 # invader-only
-c_germ_perc_ciar <- c_germ %>%
+c_germ_perc_ciar <- c_germ_raw %>%
   filter(spp == "CIAR") %>%
   group_by(week, richness_id, density_id, rep) %>%
   tidyr::pivot_wider(values_from = cum_germ_perc, names_from = spp) %>%
   ungroup() %>%
   rename(cum_germ_perc_ciar = CIAR)
 
-c_germ_perc_res <- c_germ %>% 
+c_germ_perc_res <- c_germ_raw %>% 
   filter(spp != "CIAR") %>%
   group_by(week, richness_id, density_id, rep) %>%
   summarize(cum_germ_res = sum(cum_germ, na.rm = TRUE)) %>%
@@ -278,5 +278,3 @@ write.csv(
   c_germ_w12, 
   file = here("data", "intermediate_data", "c_germ_week12.csv")
 )
-
-
