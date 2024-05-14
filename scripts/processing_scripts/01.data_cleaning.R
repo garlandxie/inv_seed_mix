@@ -142,6 +142,7 @@ height_final <- height_summ %>%
     rgr_height = round(rgr_height, digits = 3)
   ) 
 
+
 ## specific leaf area ----------------------------------------------------------
 
 leaf_area_tidy <- leaf_area_raw %>%
@@ -251,7 +252,7 @@ write.csv(
 ## height ----------------------------------------------------------------------
 
 write.csv(
-  final_height, 
+  height_final, 
   file = here("data", "intermediate_data", "rgr_height.csv"),
   row.names = FALSE
 )
