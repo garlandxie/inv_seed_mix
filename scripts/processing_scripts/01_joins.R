@@ -84,6 +84,10 @@ car::Anova(lm_res_germ_rich_dens2, type = "II")
 summary(lm_res_germ_rich_dens2)
 plot(lm_res_germ_rich_dens2)
 
+pairs_res_germ_rich_dens2 <- lm_res_germ_rich_dens2 %>%
+  emmeans::emmeans("richness_id") %>% 
+  pairs()
+
 ## height <- richness * density ------------------------------------------------
 
 sem_df %>%
