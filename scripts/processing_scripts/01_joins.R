@@ -153,17 +153,18 @@ plot(lm_bm_germ_res)
 sem_df %>%
   ggplot(aes(x = mean_rgr_height_res, y = res_comm_biomass_mg)) + 
   geom_point() + 
-  geom_smooth(method = "lm") + 
+  geom_smooth(method = "lm", se = TRUE) + 
   labs(
     x = "Relative Growth Rate (Height)", 
     y = "Resident Community Biomass (in mg)") + 
   theme_bw() 
 
 lm_bm_height_res <- lm(
-  res_comm_biomass_mg ~ mean_rgr_height_res, 
+  res_comm_biomass_mg ~ mean_rgr_height_res 
   data = sem_df)
 
 summary(lm_bm_height_res)
+plot(lm_bm_height_res)
 
 ## % germination (invader) <- resident biomass ---------------------------------
 
@@ -218,7 +219,7 @@ lm_bm_inv_germ_inv <- lm(
 summary(lm_bm_inv_germ_inv)
 plot(lm_bm_inv_germ_inv)
 
-## biomass (invader)  <- height (invader) --------------------------------------
+## biomass (invader) <- height (invader) --------------------------------------
 
 sem_df %>%
   ggplot(aes(x = mean_rgr_height_ciar, y =  tot_inv_bm_mg)) + 
@@ -226,10 +227,27 @@ sem_df %>%
   geom_smooth(method = "lm", se = FALSE) + 
   theme_bw() 
 
-lm_bm_inv_germ_inv <- lm(
+lm_bm_inv_height_inv <- lm(
   tot_inv_bm_mg ~ mean_rgr_height_ciar, 
+  data = sem_df
+)
+
+summary(lm_bm_inv_height_inv)
+plot(lm_bm_inv_height_inv)
+
+## total biomass (invader) <- % germination (invader) --------------------------
+
+sem_df %>%
+  ggplot(aes(x = cum_germ_perc_ciar, y =  tot_inv_bm_mg)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  theme_bw() 
+
+lm_bm_inv_germ_inv <- lm(
+  tot_inv_bm_mg ~ cum_germ_perc_ciar, 
   data = sem_df
 )
 
 summary(lm_bm_inv_germ_inv)
 plot(lm_bm_inv_germ_inv)
+
