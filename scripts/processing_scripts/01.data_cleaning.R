@@ -7,6 +7,7 @@ library(tidyr)      # for replacing missing values
 library(lubridate)  # for dealing with dates
 library(stringr)    # for dealing with string characters
 library(GerminaR)   # for summarizing germination indices
+library(FD)         # for calculating community-weighted means values
 
 # import -----------------------------------------------------------------------
 
@@ -210,13 +211,20 @@ sla_summary1 <- sla %>%
 # so, just group the density treatments to get an average SLA value
 # for each species 
 sla_summary2 <- sla %>%
+  filter(species != "CIAR") %>%
   group_by(Richness_ID, Density_ID, Rep, species, ind) %>%
   summarize(mean_sla = mean(sla, na.rm = TRUE)) %>%
   ungroup() %>% 
   group_by(species) %>%
   summarize(mean_sla = mean(mean_sla, na.rm = TRUE)) %>%
   ungroup() %>%
-  mutate(mean_sla = round(mean_sla, digits = 2)) 
+  mutate(mean_sla = round(mean_sla, digits = 2)) %>%
+  tibble::column_to_rownames(var = "species")
+
+sla_ciar <- sla %>%
+  filter(species == "CIAR") %>%
+  group_by(species) %>%
+  summarize(sla = mean(sla, na.rm = TRUE)) 
 
 # calculate relative abundance of each resident species for 
 # each community 
@@ -251,11 +259,28 @@ biomass_ab_res_rel <- bm_raw %>%
     ) %>%
   ungroup() %>%
   dplyr::select(-c(Richness_ID, Density_ID, Rep)) %>%
-  tibble::column_to_rownames(var = "tray") 
+  tibble::column_to_rownames(var = "tray") %>%
+  dplyr::select(ANGE, HEHE, MOFI, OEBI, RUHI)
 
+# remove zero sum abundances
+biomass_ab_res_rel2 <- biomass_ab_res_rel[rowSums(biomass_ab_res_rel)>0,]
 
-  
+# calculate community-weighted mean SLA values
+# for the resident community
 
+cwm_sla_res <- FD::dbFD(
+  x = sla_summary2, a = as.matrix(biomass_ab_res_rel2)
+)
+
+cwm_res <- cwm_sla_res$CWM %>%
+  tibble::rownames_to_column(var = "tray_id") %>%
+  mutate(
+    Richness_ID = sapply(strsplit(tray_id, split = "-"), "[[", 1),
+    Density_ID = sapply(strsplit(tray_id, split = "-"), "[[", 2),
+    Rep = sapply(strsplit(tray_id, split = "-"), "[[", 3)
+    ) %>%
+  rename(cwm_res_sla = mean_sla) %>%
+  mutate(wds_sla = abs(cwm_res_sla - sla_ciar$sla)) 
 
 ## cumulative percentage germination -------------------------------------------
 
