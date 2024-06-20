@@ -280,7 +280,8 @@ cwm_res <- cwm_sla_res$CWM %>%
     Rep = sapply(strsplit(tray_id, split = "-"), "[[", 3)
     ) %>%
   rename(cwm_res_sla = mean_sla) %>%
-  mutate(wds_sla = abs(cwm_res_sla - sla_ciar$sla)) 
+  mutate(wds_sla = abs(cwm_res_sla - sla_ciar$sla)) %>%
+  dplyr::select(Richness_ID, Density_ID, Rep, cwm_res_sla, wds_sla)
 
 ## cumulative percentage germination -------------------------------------------
 
@@ -523,7 +524,7 @@ summary(glm(cum_germ_perc_res ~ mean_gsp,
 
 # save to disk -----------------------------------------------------------------
 
-## invader biomass -----------------------s--------------------------------------
+## invader biomass -------------------------------------------------------------
 
 write.csv(
   biomass_ab_invasive, 
@@ -552,6 +553,14 @@ write.csv(
 write.csv(
   biomass_ab_res, 
   file = here("data", "intermediate_data", "resident_biomass.csv"),
+  row.names = FALSE
+)
+
+## community-weighted mean SLA -------------------------------------------------
+
+write.csv(
+  cwm_res, 
+  file = here("data", "intermediate_data", "cwm_res.csv"),
   row.names = FALSE
 )
 
