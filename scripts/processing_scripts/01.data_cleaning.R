@@ -143,42 +143,6 @@ height_final <- height_summ %>%
     rgr_height = round(rgr_height, digits = 3)
   ) 
 
-
-## specific leaf area ----------------------------------------------------------
-
-leaf_area_tidy <- leaf_area_raw %>%
-  mutate(
-    Richness_ID = stringr::str_split_i(tray_id, pattern = "-", 1),
-    Density_ID = stringr::str_split_i(tray_id, pattern = "-", 2),
-    Rep = stringr::str_split_i(tray_id, pattern = "-", 3)
-    )
-
-sla <- leaf_area_tidy %>%
-  
-  # perform inner join to get the leaf biomass and area per individual specimen
-  dplyr::inner_join(
-    leaf_bm_raw, 
-    by = c("Richness_ID", "Density_ID", "Rep", "species", "ind", "leaf_rep")
-    ) %>%
-  
-  # select appropriate columns required to do the SLA calculations
-    dplyr::select(
-      Richness_ID, 
-      Density_ID, 
-      Rep, 
-      species, 
-      ind, 
-      leaf_rep,
-      leaf_area_cm2, 
-      biomass_mg
-      ) %>%
-  
-    # calculate specific leaf area (leaf_area_cm2/biomass_mg)
-    # per individual specimen
-    mutate(sla = leaf_area_cm2/biomass_mg, 
-           sla = round(sla, digits = 2)
-           ) 
-
 ## resident community biomass --------------------------------------------------
 
 biomass_ab_res <- bm_raw %>%
@@ -188,12 +152,110 @@ biomass_ab_res <- bm_raw %>%
   ) %>%
   mutate(
     Biomass_g = na_if(Biomass_g, "-"),
-    Biomass_g = as.numeric(Biomass_g), 
-    Biomass_mg = Biomass_g * 1000
-  ) %>%
+    Biomass_g = as.numeric(Biomass_g) 
+    ) %>%
   group_by(Richness_ID, Density_ID, Rep) %>%
-  summarize(res_comm_biomass_mg = sum(Biomass_mg, na.rm = TRUE)) %>%
+  summarize(res_comm_biomass_g = sum(Biomass_g, na.rm = TRUE)) %>%
   ungroup()
+
+## community-weighted mean SLA -------------------------------------------------
+
+leaf_area_tidy <- leaf_area_raw %>%
+  mutate(
+    Richness_ID = stringr::str_split_i(tray_id, pattern = "-", 1),
+    Density_ID = stringr::str_split_i(tray_id, pattern = "-", 2),
+    Rep = stringr::str_split_i(tray_id, pattern = "-", 3)
+  )
+
+sla <- leaf_area_tidy %>%
+  
+  # perform inner join to get the leaf biomass and area per individual specimen
+  dplyr::inner_join(
+    leaf_bm_raw, 
+    by = c("Richness_ID", "Density_ID", "Rep", "species", "ind", "leaf_rep")
+  ) %>%
+  
+  # select appropriate columns required to do the SLA calculations
+  dplyr::select(
+    Richness_ID, 
+    Density_ID, 
+    Rep, 
+    species, 
+    ind, 
+    leaf_rep,
+    leaf_area_cm2, 
+    biomass_mg
+  ) %>%
+  
+  # calculate specific leaf area (leaf_area_cm2/biomass_mg)
+  # per individual specimen
+  mutate(sla = leaf_area_cm2/biomass_mg, 
+         sla = round(sla, digits = 2)
+  ) 
+
+# get SLA for each species
+# across three plant density treatments
+sla_summary1 <- sla %>%
+  group_by(Richness_ID, Density_ID, Rep, species, ind) %>%
+  summarize(mean_sla = mean(sla, na.rm = TRUE)) %>%
+  ungroup() %>% 
+  group_by(Density_ID, species) %>%
+  summarize(mean_sla = mean(mean_sla, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(mean_sla = round(mean_sla, digits = 2)) %>%
+  arrange(species)
+
+# from a previous analysis, SLA for each species 
+# across three plant density treatments were very similar
+# so, just group the density treatments to get an average SLA value
+# for each species 
+sla_summary2 <- sla %>%
+  group_by(Richness_ID, Density_ID, Rep, species, ind) %>%
+  summarize(mean_sla = mean(sla, na.rm = TRUE)) %>%
+  ungroup() %>% 
+  group_by(species) %>%
+  summarize(mean_sla = mean(mean_sla, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(mean_sla = round(mean_sla, digits = 2)) 
+
+# calculate relative abundance of each resident species for 
+# each community 
+biomass_ab_res_rel <- bm_raw %>%
+  dplyr::filter(
+    Biomass_Type == "AB" &
+      Species_ID != "CIAR"
+  ) %>%
+  mutate(
+    spp_biomass_g = na_if(Biomass_g, "-"),
+    spp_biomass_g = as.numeric(Biomass_g)
+  ) %>%
+  group_by(Richness_ID, Density_ID, Rep, Species_ID) %>%
+  summarize(
+    spp_biomass_g = sum(spp_biomass_g, na.rm = TRUE),
+    spp_biomass_g = round(spp_biomass_g, digits = 2)) %>%
+  
+  # fix a typo
+  mutate(Species_ID = case_when(
+    Species_ID == "OEBI " ~ "OEBI", 
+    TRUE ~ Species_ID)
+    ) %>%
+  ungroup() %>%
+  
+  # create a community data matrix 
+  # with abundance as cells and tray ID's as rownames
+  group_by(Richness_ID, Density_ID, Rep) %>%
+  tidyr::pivot_wider(names_from = Species_ID, values_from = spp_biomass_g) %>%
+  mutate(
+    across(ANGE:RUHI, ~replace_na(., 0)),
+    tray = paste(Richness_ID, Density_ID, Rep, sep = "-")
+    ) %>%
+  ungroup() %>%
+  dplyr::select(-c(Richness_ID, Density_ID, Rep)) %>%
+  tibble::column_to_rownames(var = "tray") 
+
+
+  
+
 
 ## cumulative percentage germination -------------------------------------------
 
