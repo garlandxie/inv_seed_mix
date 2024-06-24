@@ -4,6 +4,7 @@ library(dplyr)
 library(car)
 library(ggplot2)
 library(emmeans)
+library(mgcv)
 
 # import -----------------------------------------------------------------------
 
@@ -11,6 +12,7 @@ inv_bm <- read.csv(here("data", "intermediate_data", "invader_biomass.csv"))
 rgr_height <- read.csv(here("data", "intermediate_data", "rgr_height.csv"))
 cum_germ_perc <- read.csv(here("data", "intermediate_data", "c_germ_week12.csv"))
 res_bm <- read.csv(here("data", "intermediate_data", "resident_biomass.csv"))
+cwm_res <- read.csv(here("data", "intermediate_data", "cwm_res.csv"))
 
 # data cleaning ----------------------------------------------------------------
 
@@ -39,6 +41,7 @@ sem_df <- inv_bm %>%
   full_join(rgr_height_ciar, by = multi_key_id) %>%
   full_join(cum_germ_perc, by = multi_key_id) %>%
   full_join(janitor::clean_names(res_bm), by = multi_key_id) %>%
+  full_join(janitor::clean_names(cwm_res), by = multi_key_id) %>%
   dplyr::select(
     richness_id, 
     density_id, 
@@ -50,7 +53,8 @@ sem_df <- inv_bm %>%
     mean_rgr_height_ciar, 
     sown_seeds_res = sown_seeds, 
     cum_germ_perc_ciar, 
-    cum_germ_perc_res
+    cum_germ_perc_res,
+    wds_sla
   ) 
     
 # statistical analyses ---------------------------------------------------------
@@ -160,7 +164,7 @@ sem_df %>%
   theme_bw() 
 
 lm_bm_height_res <- lm(
-  res_comm_biomass_mg ~ mean_rgr_height_res 
+  res_comm_biomass_mg ~ mean_rgr_height_res,
   data = sem_df)
 
 summary(lm_bm_height_res)
@@ -250,4 +254,63 @@ lm_bm_inv_germ_inv <- lm(
 
 summary(lm_bm_inv_germ_inv)
 plot(lm_bm_inv_germ_inv)
+
+## invader biomass <- community weighted mean SLA ------------------------------
+
+sem_df %>% 
+  ggplot(aes(x = wds_sla, y = tot_inv_bm_mg)) + 
+  geom_point()+ 
+  geom_smooth(method = "lm") + 
+  labs(x = "Community weighted mean dissimilarity", 
+       y = "Invader biomass (mg)"
+  ) + 
+  theme_bw() 
+
+lm_sla_inv_bm <- lm(
+  tot_inv_bm_mg ~ wds_sla, 
+  data = sem_df
+)
+
+summary(lm_sla_inv_bm)
+plot(lm_sla_inv_bm)
+
+## community weighted mean SLA <- resident community biomass -------------------
+
+# a potential non-linear relationship 
+sem_df %>% 
+  ggplot(aes(x = res_comm_biomass_mg, y = wds_sla)) + 
+  geom_point() + 
+  geom_smooth(method = "glm", method.args = list(family = Gamma(link = "log"))) + 
+  labs(x = "Resident Community Biomass (mg)",
+       y = "Mean Weighted Community Dissimilarity") + 
+  theme_bw() 
+
+# fit using ordinary least squares 
+lm_sla_res_bm <- lm(
+  wds_sla ~ res_comm_biomass_mg,
+  data = sem_df
+)
+
+# fit using generalized additive model
+gam_sla_res_bm <- mgcv::gam(
+  wds_sla ~ s(res_comm_biomass_mg), 
+  family = Gamma(link = "log"),
+  method = "ML",
+  data = sem_df
+)
+
+# fit using a generalized linear model 
+glm_sla_res_bm <- glm(
+  wds_sla ~ res_comm_biomass_mg,
+  family = Gamma(link = "log"),
+  data = sem_df
+)
+
+# compare these two models
+# values are very similar between GLM and GAM, so just choose the simpler model
+AIC(gam_sla_res_bm, glm_sla_res_bm, lm_sla_res_bm)
+
+# sanity checks
+summary(glm_sla_res_bm)
+plot(glm_sla_res_bm)
 
