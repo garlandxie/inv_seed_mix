@@ -147,6 +147,34 @@ pairs_height_rich_dens <- lm_height_rich_dens %>%
   emmeans::emmeans("density_id") %>% 
   pairs()
 
+
+## % germination (resident) <- germination speed (resident) --------------------
+
+# visualize data before running models 
+sem_df %>%
+  ggplot(aes(x = mean_gsp, y = cum_germ_perc_res)) + 
+  geom_point() + 
+  labs(
+    x = "Germination Speed", 
+    y = "% Germination") +
+  theme_bw() 
+
+# model fit 
+glm_res_germ_gsp <- glm(cum_germ_perc_res ~ mean_gsp, 
+    family = binomial(link = "logit"), 
+    weights = sown_seeds_res, 
+    data = sem_df
+    )
+
+summary(glm_res_germ_gsp)
+
+# sanity check 
+
+plot(glm_res_germ_gsp, 1)
+plot(glm_res_germ_gsp, 2)
+plot(glm_res_germ_gsp, 3)
+plot(glm_res_germ_gsp, 4)
+
 ## RGR height (resident) <- % germination (resident) ---------------------------
 
 # visualize data before running models
