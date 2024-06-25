@@ -93,7 +93,7 @@ pairs_res_germ_rich_dens2 <- lm_res_germ_rich_dens2 %>%
   emmeans::emmeans("richness_id") %>% 
   pairs()
 
-## RGR height <- richness * density --------------------------------------------
+## RGR height (resident) <- richness * density ---------------------------------
 
 # visualize data before running models
 sem_df %>%
@@ -125,7 +125,7 @@ pairs_height_rich_dens <- lm_height_rich_dens %>%
   emmeans::emmeans("density_id") %>% 
   pairs()
 
-## height <- % germination (resident) ------------------------------------------
+## RGR height (resident) <- % germination (resident) ---------------------------
 
 # visualize data before running models
 sem_df %>%
@@ -152,6 +152,7 @@ plot(lm_height_germ_res, 4)
 
 ## resident biomass <- % germination (resident) --------------------------------
 
+# visualize data before running models
 sem_df %>%
   ggplot(aes(x = cum_germ_perc_res, y = res_comm_biomass_mg)) + 
   geom_point() + 
@@ -160,12 +161,18 @@ sem_df %>%
     y = "Resident Community Biomass (in mg)") + 
   theme_bw() 
 
+# model fit
 lm_bm_germ_res <- lm(
   res_comm_biomass_mg ~ cum_germ_perc_res, 
   data = sem_df)
 
 summary(lm_bm_germ_res)
-plot(lm_bm_germ_res)
+
+# sanity checks
+plot(lm_bm_germ_res, 1)
+plot(lm_bm_germ_res, 2)
+plot(lm_bm_germ_res, 3)
+plot(lm_bm_germ_res, 4)
 
 ## resident biomass <- height (resident) ---------------------------------------
 
