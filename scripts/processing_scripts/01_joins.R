@@ -260,7 +260,7 @@ sem_df %>%
 
 # model fit
 glm_res_bm_germ_inv <- glm(
-  cum_germ_perc_ciar ~ res_comm_biomass_mg, 
+  cum_germ_perc_ciar ~ res_comm_biomass_g, 
   family = binomial(link = "logit"),
   data = sem_df
   )
@@ -284,7 +284,7 @@ sem_df %>%
   theme_bw() 
 
 lm_res_bm_height_inv <- lm(
-  mean_rgr_height_ciar ~ res_comm_biomass_mg, 
+  mean_rgr_height_ciar ~ res_comm_biomass_g, 
   data = sem_df
 )
 
@@ -306,68 +306,11 @@ sem_df %>%
        y = "Total Invader Biomass") + 
   theme_bw() 
 
-# model fit
-lm_bm_inv_germ_inv <- lm(
-  tot_inv_bm_g ~ cum_germ_perc_ciar, 
-  data = sem_df
-)
-
-summary(lm_bm_inv_germ_inv)
-
-# sanity checks
-plot(lm_bm_inv_germ_inv, 1)
-plot(lm_bm_inv_germ_inv, 2)
-plot(lm_bm_inv_germ_inv, 3)
-plot(lm_bm_inv_germ_inv, 4)
-
-## biomass (invader) <- RGR height (invader) -----------------------------------
-
-# visualizing data befoer running models 
 sem_df %>%
   ggplot(aes(x = mean_rgr_height_ciar, y =  tot_inv_bm_g)) + 
   geom_point() + 
   theme_bw() 
 
-# model fit
-lm_bm_inv_height_inv <- lm(
-  tot_inv_bm_g ~ mean_rgr_height_ciar, 
-  data = sem_df
-)
-
-summary(lm_bm_inv_height_inv)
-
-# sanity checks
-plot(lm_bm_inv_height_inv, 1)
-plot(lm_bm_inv_height_inv, 2)
-plot(lm_bm_inv_height_inv, 3)
-plot(lm_bm_inv_height_inv, 4)
-
-## biomass (invader) <- % germination (invader) --------------------------
-
-# visualize data before running the models
-sem_df %>%
-  ggplot(aes(x = cum_germ_perc_ciar, y =  tot_inv_bm_g)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", se = FALSE) + 
-  theme_bw() 
-
-# model fit
-lm_bm_inv_germ_inv <- lm(
-  tot_inv_bm_g ~ cum_germ_perc_ciar, 
-  data = sem_df
-)
-
-summary(lm_bm_inv_germ_inv)
-
-# sanity checks
-plot(lm_bm_inv_germ_inv, 1)
-plot(lm_bm_inv_germ_inv, 2)
-plot(lm_bm_inv_germ_inv, 3)
-plot(lm_bm_inv_germ_inv, 4)
-
-## biomass (invader) <- CWM SLA (resident) ---------------------------------------
-
-# visualize data before running the models
 sem_df %>% 
   ggplot(aes(x = wds_sla, y = tot_inv_bm_g)) + 
   geom_point()+ 
@@ -378,18 +321,18 @@ sem_df %>%
   theme_bw() 
 
 # model fit
-lm_sla_inv_bm <- lm(
-  tot_inv_bm_g ~ wds_sla, 
+lm_bm_inv <- lm(
+  log(tot_inv_bm_g) ~ cum_germ_perc_ciar + mean_rgr_height_ciar + wds_sla, 
   data = sem_df
 )
 
-summary(lm_sla_inv_bm)
+summary(lm_bm_inv)
 
 # sanity checks
-plot(lm_sla_inv_bm, 1)
-plot(lm_sla_inv_bm, 2)
-plot(lm_sla_inv_bm, 3)
-plot(lm_sla_inv_bm, 4)
+plot(lm_bm_inv, 1)
+plot(lm_bm_inv, 2)
+plot(lm_bm_inv, 3)
+plot(lm_bm_inv, 4)
 
 ## CWM SLA (resident) <- community biomass (resident) --------------------------
 
@@ -436,6 +379,19 @@ plot(glm_sla_res_bm, 4)
 
 # run piecewise SEM ------------------------------------------------------------
 
-piecewiseSEM::psem(
-  
+sem_germ <- piecewiseSEM::psem(
+  glm_res_germ_rich_dens,
+  glm_gsp_rich_dens,
+  lm_height_rich_dens,
+  glm_res_germ_gsp,
+  lm_height_germ_res,
+  lm_bm_germ_res,
+  lm_bm_height_res,
+  glm_res_bm_germ_inv,
+  lm_res_bm_height_inv,
+  lm_bm_inv_germ_inv,
+  lm_bm_inv_height_inv,
+  lm_bm_inv_germ_inv,
+  lm_sla_inv_bm,
+  lm_sla_res_bm
 )
