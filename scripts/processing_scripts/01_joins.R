@@ -169,7 +169,6 @@ glm_res_germ_gsp <- glm(cum_germ_perc_res ~ mean_gsp,
 summary(glm_res_germ_gsp)
 
 # sanity check 
-
 plot(glm_res_germ_gsp, 1)
 plot(glm_res_germ_gsp, 2)
 plot(glm_res_germ_gsp, 3)
@@ -298,93 +297,118 @@ plot(lm_res_bm_height_inv, 4)
 
 ## biomass (invader) <- % germination (invader) --------------------------------
 
+# visualize data before running models
 sem_df %>%
-  ggplot(aes(x = cum_germ_perc_ciar, y =  tot_inv_bm_mg)) + 
+  ggplot(aes(x = cum_germ_perc_ciar, y =  tot_inv_bm_g)) + 
   geom_point() + 
-  geom_smooth(method = "lm", se = FALSE) + 
   labs(x = "Percentage Germination (Invader)",
        y = "Total Invader Biomass") + 
   theme_bw() 
 
+# model fit
 lm_bm_inv_germ_inv <- lm(
-  tot_inv_bm_mg ~ cum_germ_perc_ciar, 
+  tot_inv_bm_g ~ cum_germ_perc_ciar, 
   data = sem_df
 )
 
 summary(lm_bm_inv_germ_inv)
-plot(lm_bm_inv_germ_inv)
 
-## biomass (invader) <- height (invader) --------------------------------------
+# sanity checks
+plot(lm_bm_inv_germ_inv, 1)
+plot(lm_bm_inv_germ_inv, 2)
+plot(lm_bm_inv_germ_inv, 3)
+plot(lm_bm_inv_germ_inv, 4)
 
+## biomass (invader) <- RGR height (invader) -----------------------------------
+
+# visualizing data befoer running models 
 sem_df %>%
-  ggplot(aes(x = mean_rgr_height_ciar, y =  tot_inv_bm_mg)) + 
+  ggplot(aes(x = mean_rgr_height_ciar, y =  tot_inv_bm_g)) + 
   geom_point() + 
-  geom_smooth(method = "lm", se = FALSE) + 
   theme_bw() 
 
+# model fit
 lm_bm_inv_height_inv <- lm(
-  tot_inv_bm_mg ~ mean_rgr_height_ciar, 
+  tot_inv_bm_g ~ mean_rgr_height_ciar, 
   data = sem_df
 )
 
 summary(lm_bm_inv_height_inv)
-plot(lm_bm_inv_height_inv)
 
-## total biomass (invader) <- % germination (invader) --------------------------
+# sanity checks
+plot(lm_bm_inv_height_inv, 1)
+plot(lm_bm_inv_height_inv, 2)
+plot(lm_bm_inv_height_inv, 3)
+plot(lm_bm_inv_height_inv, 4)
 
+## biomass (invader) <- % germination (invader) --------------------------
+
+# visualize data before running the models
 sem_df %>%
-  ggplot(aes(x = cum_germ_perc_ciar, y =  tot_inv_bm_mg)) + 
+  ggplot(aes(x = cum_germ_perc_ciar, y =  tot_inv_bm_g)) + 
   geom_point() + 
   geom_smooth(method = "lm", se = FALSE) + 
   theme_bw() 
 
+# model fit
 lm_bm_inv_germ_inv <- lm(
-  tot_inv_bm_mg ~ cum_germ_perc_ciar, 
+  tot_inv_bm_g ~ cum_germ_perc_ciar, 
   data = sem_df
 )
 
 summary(lm_bm_inv_germ_inv)
-plot(lm_bm_inv_germ_inv)
+
+# sanity checks
+plot(lm_bm_inv_germ_inv, 1)
+plot(lm_bm_inv_germ_inv, 2)
+plot(lm_bm_inv_germ_inv, 3)
+plot(lm_bm_inv_germ_inv, 4)
 
 ## invader biomass <- community weighted mean SLA ------------------------------
 
+# visualize data before running the models
 sem_df %>% 
-  ggplot(aes(x = wds_sla, y = tot_inv_bm_mg)) + 
+  ggplot(aes(x = wds_sla, y = tot_inv_bm_g)) + 
   geom_point()+ 
   geom_smooth(method = "lm") + 
   labs(x = "Community weighted mean dissimilarity", 
-       y = "Invader biomass (mg)"
+       y = "Invader biomass (g)"
   ) + 
   theme_bw() 
 
+# model fit
 lm_sla_inv_bm <- lm(
-  tot_inv_bm_mg ~ wds_sla, 
+  tot_inv_bm_g ~ wds_sla, 
   data = sem_df
 )
 
 summary(lm_sla_inv_bm)
-plot(lm_sla_inv_bm)
+
+# sanity checks
+plot(lm_sla_inv_bm, 1)
+plot(lm_sla_inv_bm, 2)
+plot(lm_sla_inv_bm, 3)
+plot(lm_sla_inv_bm, 4)
 
 ## community weighted mean SLA <- resident community biomass -------------------
 
 # a potential non-linear relationship 
 sem_df %>% 
-  ggplot(aes(x = res_comm_biomass_mg, y = wds_sla)) + 
+  ggplot(aes(x = res_comm_biomass_g, y = wds_sla)) + 
   geom_point() + 
-  geom_smooth(method = "glm", method.args = list(family = Gamma(link = "log"))) + 
   labs(x = "Resident Community Biomass (mg)",
        y = "Mean Weighted Community Dissimilarity") + 
   theme_bw() 
 
 # fit using ordinary least squares 
 lm_sla_res_bm <- lm(
-  wds_sla ~ res_comm_biomass_mg,
+  wds_sla ~ res_comm_biomass_g,
   data = sem_df
 )
 
 # fit using generalized additive model
 gam_sla_res_bm <- mgcv::gam(
-  wds_sla ~ s(res_comm_biomass_mg), 
+  wds_sla ~ s(res_comm_biomass_g), 
   family = Gamma(link = "log"),
   method = "ML",
   data = sem_df
@@ -392,7 +416,7 @@ gam_sla_res_bm <- mgcv::gam(
 
 # fit using a generalized linear model 
 glm_sla_res_bm <- glm(
-  wds_sla ~ res_comm_biomass_mg,
+  wds_sla ~ res_comm_biomass_g,
   family = Gamma(link = "log"),
   data = sem_df
 )
@@ -401,7 +425,10 @@ glm_sla_res_bm <- glm(
 # values are very similar between GLM and GAM, so just choose the simpler model
 AIC(gam_sla_res_bm, glm_sla_res_bm, lm_sla_res_bm)
 
-# sanity checks
 summary(glm_sla_res_bm)
-plot(glm_sla_res_bm)
 
+# sanity checks
+plot(glm_sla_res_bm, 1)
+plot(glm_sla_res_bm, 2)
+plot(glm_sla_res_bm, 3)
+plot(glm_sla_res_bm, 4)
