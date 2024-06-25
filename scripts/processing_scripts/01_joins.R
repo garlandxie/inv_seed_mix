@@ -200,7 +200,7 @@ plot(lm_height_germ_res, 2)
 plot(lm_height_germ_res, 3)
 plot(lm_height_germ_res, 4)
 
-## resident biomass <- % germination (resident) --------------------------------
+## community biomass (resident) <- % germination (resident) --------------------
 
 # visualize data before running models
 sem_df %>%
