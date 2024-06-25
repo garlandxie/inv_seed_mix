@@ -203,16 +203,16 @@ plot(lm_height_germ_res, 4)
 
 # visualize data before running models
 sem_df %>%
-  ggplot(aes(x = cum_germ_perc_res, y = res_comm_biomass_mg)) + 
+  ggplot(aes(x = cum_germ_perc_res, y = res_comm_biomass_g)) + 
   geom_point() + 
   labs(
     x = "Percent Germination of Resident Community", 
-    y = "Resident Community Biomass (in mg)") + 
+    y = "Resident Community Biomass (in g)") + 
   theme_bw() 
 
 # model fit
 lm_bm_germ_res <- lm(
-  res_comm_biomass_mg ~ cum_germ_perc_res, 
+  res_comm_biomass_g ~ cum_germ_perc_res, 
   data = sem_df)
 
 summary(lm_bm_germ_res)
@@ -227,7 +227,7 @@ plot(lm_bm_germ_res, 4)
 
 # visualizing data before running models
 sem_df %>%
-  ggplot(aes(x = mean_rgr_height_res, y = res_comm_biomass_mg)) + 
+  ggplot(aes(x = mean_rgr_height_res, y = res_comm_biomass_g)) + 
   geom_point() + 
   labs(
     x = "Relative Growth Rate (Height)", 
@@ -236,7 +236,7 @@ sem_df %>%
 
 # model fit
 lm_bm_height_res <- lm(
-  res_comm_biomass_mg ~ mean_rgr_height_res,
+  res_comm_biomass_g ~ mean_rgr_height_res,
   data = sem_df)
 
 summary(lm_bm_height_res)
@@ -392,7 +392,7 @@ plot(lm_sla_inv_bm, 4)
 
 ## community weighted mean SLA <- resident community biomass -------------------
 
-# a potential non-linear relationship 
+# a potential non-linear relationship seen in the raw data
 sem_df %>% 
   ggplot(aes(x = res_comm_biomass_g, y = wds_sla)) + 
   geom_point() + 
