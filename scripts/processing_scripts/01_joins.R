@@ -127,21 +127,29 @@ pairs_height_rich_dens <- lm_height_rich_dens %>%
 
 ## height <- % germination (resident) ------------------------------------------
 
+# visualize data before running models
 sem_df %>%
   ggplot(aes(x = cum_germ_perc_res, y = mean_rgr_height_res)) + 
   geom_point() + 
+  geom_smooth(method = "glm", se = FALSE) + 
   labs(
     x = "Percent Germination of Resident Community", 
     y = "Relative Growth Rate (Height)") +
   scale_fill_discrete(name = "Seeding Density") + 
   theme_bw() 
 
+# model fit
 lm_height_germ_res <- lm(
   mean_rgr_height_res ~ cum_germ_perc_res, 
   data = sem_df)
 
 summary(lm_height_germ_res)
-plot(lm_height_germ_res)
+
+# sanity checks
+plot(lm_height_germ_res, 1)
+plot(lm_height_germ_res, 2)
+plot(lm_height_germ_res, 3)
+plot(lm_height_germ_res, 4)
 
 ## resident biomass <- % germination (resident) --------------------------------
 
