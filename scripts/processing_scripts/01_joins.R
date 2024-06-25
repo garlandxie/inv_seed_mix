@@ -61,6 +61,16 @@ sem_df <- inv_bm %>%
 
 ## % germination (resident) <- richness * density ------------------------------
 
+# visualize data before running models
+sem_df %>%
+  ggplot(aes(x = richness_id, y = cum_germ_perc_res, fill = density_id)) + 
+  geom_boxplot() + 
+  labs(
+    x = "Seeding Richness", 
+    y = "Relative Growth Rate (Height)") +
+  scale_fill_discrete(name = "Seeding Density") + 
+  theme_bw() 
+
 # model fit
 lm_res_germ_rich_dens <- glm(
   cum_germ_perc_res ~ richness_id*density_id, 
