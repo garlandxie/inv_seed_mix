@@ -10,7 +10,7 @@ library(mgcv)
 
 inv_bm <- read.csv(here("data", "intermediate_data", "invader_biomass.csv"))
 rgr_height <- read.csv(here("data", "intermediate_data", "rgr_height.csv"))
-cum_germ_perc <- read.csv(here("data", "intermediate_data", "c_germ_week12.csv"))
+cum_germ_perc <- read.csv(here("data", "intermediate_data", "c_germ_week.csv"))
 res_bm <- read.csv(here("data", "intermediate_data", "resident_biomass.csv"))
 cwm_res <- read.csv(here("data", "intermediate_data", "cwm_res.csv"))
 
@@ -46,14 +46,15 @@ sem_df <- inv_bm %>%
     richness_id, 
     density_id, 
     rep, 
-    tot_inv_bm_mg,
+    tot_inv_bm_g,
     num_invaders, 
-    res_comm_biomass_mg, 
+    res_comm_biomass_g, 
     mean_rgr_height_res,
     mean_rgr_height_ciar, 
     sown_seeds_res = sown_seeds, 
     cum_germ_perc_ciar, 
     cum_germ_perc_res,
+    mean_gsp, 
     wds_sla
   ) 
     
@@ -92,6 +93,27 @@ plot(lm_res_germ_rich_dens2, 4)
 pairs_res_germ_rich_dens2 <- lm_res_germ_rich_dens2 %>%
   emmeans::emmeans("richness_id") %>% 
   pairs()
+
+## germination speed (resident) <- richness * density --------------------------
+
+# visualize data before running models
+sem_df %>%
+  ggplot(aes(x = richness_id, y = mean_gsp, fill = density_id)) + 
+  geom_boxplot() + 
+  labs(
+    x = "Seeding Richness", 
+    y = "Germination Speed") +
+  scale_fill_discrete(name = "Seeding Density") + 
+  theme_bw() 
+
+# model fit
+glm_gsp_rich_dens <- glm(
+  mean_gsp ~ density_id*richness_id, 
+  family = Gamma(link = "log"), 
+  data = sem_df)
+
+# test global significance using one-way ANOVA
+car::Anova(glm_gsp_rich_dens , type = "II")
 
 ## RGR height (resident) <- richness * density ---------------------------------
 
