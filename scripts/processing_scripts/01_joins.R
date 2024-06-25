@@ -74,24 +74,24 @@ sem_df %>%
   theme_bw() 
 
 # model fit
-lm_res_germ_rich_dens <- glm(
+glm_res_germ_rich_dens <- glm(
   cum_germ_perc_res ~ richness_id*density_id, 
   family = binomial(link = "logit"), 
   weights = sown_seeds_res, 
   data = sem_df)
 
 # test global significance using one-way ANOVA
-car::Anova(lm_res_germ_rich_dens, type = "II")
-summary(lm_res_germ_rich_dens2)
+car::Anova(glm_res_germ_rich_dens, type = "II")
+summary(glm_res_germ_rich_dens2)
 
 # sanity checks
-plot(lm_res_germ_rich_dens2, 1)
-plot(lm_res_germ_rich_dens2, 2)
-plot(lm_res_germ_rich_dens2, 3)
-plot(lm_res_germ_rich_dens2, 4)
+plot(glm_res_germ_rich_dens2, 1)
+plot(glm_res_germ_rich_dens2, 2)
+plot(glm_res_germ_rich_dens2, 3)
+plot(glm_res_germ_rich_dens2, 4)
 
 # check pairwise comparisons
-pairs_res_germ_rich_dens2 <- lm_res_germ_rich_dens2 %>%
+pairs_res_germ_rich_dens2 <- glm_res_germ_rich_dens2 %>%
   emmeans::emmeans("richness_id") %>% 
   pairs()
 
@@ -433,3 +433,9 @@ plot(glm_sla_res_bm, 1)
 plot(glm_sla_res_bm, 2)
 plot(glm_sla_res_bm, 3)
 plot(glm_sla_res_bm, 4)
+
+# run piecewise SEM ------------------------------------------------------------
+
+piecewiseSEM::psem(
+  
+)
