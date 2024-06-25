@@ -131,7 +131,6 @@ pairs_height_rich_dens <- lm_height_rich_dens %>%
 sem_df %>%
   ggplot(aes(x = cum_germ_perc_res, y = mean_rgr_height_res)) + 
   geom_point() + 
-  geom_smooth(method = "glm", se = FALSE) + 
   labs(
     x = "Percent Germination of Resident Community", 
     y = "Relative Growth Rate (Height)") +
