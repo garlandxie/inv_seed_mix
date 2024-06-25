@@ -5,6 +5,7 @@ library(car)
 library(ggplot2)
 library(emmeans)
 library(mgcv)
+library(piecewiseSEM)
 
 # import -----------------------------------------------------------------------
 
@@ -247,7 +248,7 @@ plot(lm_bm_height_res, 2)
 plot(lm_bm_height_res, 3)
 plot(lm_bm_height_res, 4)
 
-## % germination (invader) <- resident biomass ---------------------------------
+## % germination (invader) <- community biomass (resident) ---------------------
 
 # visualize data before running models
 sem_df %>%
@@ -364,7 +365,7 @@ plot(lm_bm_inv_germ_inv, 2)
 plot(lm_bm_inv_germ_inv, 3)
 plot(lm_bm_inv_germ_inv, 4)
 
-## invader biomass <- community weighted mean SLA ------------------------------
+## biomass (invader) <- CWM SLA (resident) ---------------------------------------
 
 # visualize data before running the models
 sem_df %>% 
@@ -390,7 +391,7 @@ plot(lm_sla_inv_bm, 2)
 plot(lm_sla_inv_bm, 3)
 plot(lm_sla_inv_bm, 4)
 
-## community weighted mean SLA <- resident community biomass -------------------
+## CWM SLA (resident) <- community biomass (resident) --------------------------
 
 # a potential non-linear relationship seen in the raw data
 sem_df %>% 
