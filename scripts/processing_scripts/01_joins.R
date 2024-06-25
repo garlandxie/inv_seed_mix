@@ -200,21 +200,28 @@ plot(lm_bm_height_res, 4)
 
 ## % germination (invader) <- resident biomass ---------------------------------
 
+# visualize data before running models
 sem_df %>%
   ggplot(aes(x = res_comm_biomass_mg, y = cum_germ_perc_ciar)) + 
   geom_point() + 
   geom_smooth(method = "lm") + 
+  labs(x = "Resident Community Biomass")
   theme_bw() 
 
+# model fit
 glm_res_bm_germ_inv <- glm(
   cum_germ_perc_ciar ~ res_comm_biomass_mg, 
   family = binomial(link = "logit"),
   data = sem_df
   )
 
-summary(lm_res_bm_germ_inv)
-plot(lm_res_bm_germ_inv)
+summary(glm_res_bm_germ_inv)
 
+# sanity checks
+plot(glm_res_bm_germ_inv, 1)
+plot(glm_res_bm_germ_inv, 2)
+plot(glm_res_bm_germ_inv, 3)
+plot(glm_res_bm_germ_inv, 4)
 
 ## % germination (invader) <- height (resident) --------------------------------
 
