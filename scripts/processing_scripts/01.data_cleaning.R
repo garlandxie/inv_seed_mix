@@ -29,13 +29,12 @@ biomass_ab_invasive <- bm_raw %>%
   ) %>%
   mutate(
     Biomass_g = na_if(Biomass_g, "-"),
-    Biomass_g = as.numeric(Biomass_g), 
-    Biomass_mg = Biomass_g * 1000
-  ) %>%
+    Biomass_g = as.numeric(Biomass_g)
+    ) %>%
   group_by(Richness_ID, Density_ID, Rep) %>%
   summarize(
-    mean_inv_bm_mg = mean(Biomass_mg, na.rm = TRUE) %>% round(digits = 2), 
-    tot_inv_bm_mg = sum(Biomass_mg, na.rm = TRUE),
+    mean_inv_bm_g = mean(Biomass_g, na.rm = TRUE) %>% round(digits = 2), 
+    tot_inv_bm_g = sum(Biomass_g, na.rm = TRUE),
     num_invaders = n()
   ) %>%
   ungroup() %>%
@@ -48,12 +47,12 @@ biomass_ab_invasive <- bm_raw %>%
 # also: there is a root sample for one invader (C1) so number of invaders 
 # for the M4-D2-5 tray can still be 1 
 
-biomass_ab_invasive$mean_inv_bm_mg[which(
+biomass_ab_invasive$mean_inv_bm_g[which(
   biomass_ab_invasive$Richness_ID == "M4" &
   biomass_ab_invasive$Density_ID == "D2" &
   biomass_ab_invasive$Rep == "5")] <- NA
 
-biomass_ab_invasive$tot_inv_bm_mg[which(
+biomass_ab_invasive$tot_inv_bm_g[which(
   biomass_ab_invasive$Richness_ID == "M4" &
   biomass_ab_invasive$Density_ID == "D2" &
   biomass_ab_invasive$Rep == "5")] <- NA
@@ -567,6 +566,6 @@ write.csv(
 ## cumulative percentage germination -------------------------------------------
 
 write.csv(
-  c_germ_w12, 
+  c_germ, 
   file = here("data", "intermediate_data", "c_germ_week.csv")
 )
