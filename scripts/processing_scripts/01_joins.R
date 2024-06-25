@@ -61,33 +61,24 @@ sem_df <- inv_bm %>%
 
 ## % germination (resident) <- richness * density ------------------------------
 
-sem_df %>%
-  ggplot(aes(x = richness_id, y = cum_germ_perc_res, fill = density_id)) + 
-  geom_boxplot() + 
-  labs(
-    x = "Seeding Richness", 
-    y = "Percentage Germination (Resident Community)") +
-  scale_fill_discrete(name = "Seeding Density") + 
-  theme_bw() 
-
-lm_res_germ_rich_dens1 <- glm(
+# model fit
+lm_res_germ_rich_dens <- glm(
   cum_germ_perc_res ~ richness_id*density_id, 
   family = binomial(link = "logit"), 
   weights = sown_seeds_res, 
   data = sem_df)
 
-lm_res_germ_rich_dens2 <- glm(
-  cum_germ_perc_res ~ richness_id + density_id, 
-  family = binomial(link = "logit"), 
-  weights = sown_seeds_res, 
-  data = sem_df)
-
-AIC(lm_res_germ_rich_dens2, lm_res_germ_rich_dens1)
-
-car::Anova(lm_res_germ_rich_dens2, type = "II")
+# test global significance using one-way ANOVA
+car::Anova(lm_res_germ_rich_dens, type = "II")
 summary(lm_res_germ_rich_dens2)
-plot(lm_res_germ_rich_dens2)
 
+# sanity checks
+plot(lm_res_germ_rich_dens2, 1)
+plot(lm_res_germ_rich_dens2, 2)
+plot(lm_res_germ_rich_dens2, 3)
+plot(lm_res_germ_rich_dens2, 4)
+
+# check pairwise comparisons
 pairs_res_germ_rich_dens2 <- lm_res_germ_rich_dens2 %>%
   emmeans::emmeans("richness_id") %>% 
   pairs()
@@ -121,7 +112,6 @@ plot(lm_height_rich_dens2)
 sem_df %>%
   ggplot(aes(x = cum_germ_perc_res, y = mean_rgr_height_res)) + 
   geom_point() + 
-  geom_smooth(method = "lm") +
   labs(
     x = "Percent Germination of Resident Community", 
     y = "Relative Growth Rate (Height)") +
@@ -178,8 +168,9 @@ sem_df %>%
   geom_smooth(method = "lm") + 
   theme_bw() 
 
-lm_res_bm_germ_inv <- lm(
+glm_res_bm_germ_inv <- glm(
   cum_germ_perc_ciar ~ res_comm_biomass_mg, 
+  family = binomial(link = "logit"),
   data = sem_df
   )
 
