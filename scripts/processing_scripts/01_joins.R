@@ -83,8 +83,9 @@ pairs_res_germ_rich_dens2 <- lm_res_germ_rich_dens2 %>%
   emmeans::emmeans("richness_id") %>% 
   pairs()
 
-## height <- richness * density ------------------------------------------------
+## RGR height <- richness * density --------------------------------------------
 
+# visualize data before running models
 sem_df %>%
   ggplot(aes(x = richness_id, y = mean_rgr_height_res, fill = density_id)) + 
   geom_boxplot() + 
@@ -94,18 +95,25 @@ sem_df %>%
   scale_fill_discrete(name = "Seeding Density") + 
   theme_bw() 
 
-lm_height_rich_dens1 <- lm(
+# model fit 
+lm_height_rich_dens <- lm(
   mean_rgr_height_res ~ richness_id*density_id, 
   data = sem_df)
 
-lm_height_rich_dens2 <- lm(
-  mean_rgr_height_res ~ richness_id + density_id, 
-  data = sem_df)
+# test global significance using one-way ANOVA
+car::Anova(lm_height_rich_dens, type = "II")
+summary(lm_height_rich_dens) 
 
-AIC(lm_height_rich_dens2, lm_height_rich_dens1)
-car::Anova(lm_height_rich_dens2, type = "II")
-summary(lm_height_rich_dens2) 
-plot(lm_height_rich_dens2)
+# sanity checks
+plot(lm_height_rich_dens, 1)
+plot(lm_height_rich_dens, 2)
+plot(lm_height_rich_dens, 3)
+plot(lm_height_rich_dens, 4)
+
+# check pairwise comparisons
+pairs_height_rich_dens <- lm_height_rich_dens %>%
+  emmeans::emmeans("density_id") %>% 
+  pairs()
 
 ## height <- % germination (resident) ------------------------------------------
 
