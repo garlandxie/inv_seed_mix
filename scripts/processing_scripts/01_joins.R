@@ -61,7 +61,7 @@ sem_df <- inv_bm %>%
     
 # statistical analyses ---------------------------------------------------------
 
-## % germination (resident) <- richness * density ------------------------------
+## % germination (resident) <- richness * density + germination speed ----------
 
 # visualize data before running models
 sem_df %>%
@@ -73,27 +73,28 @@ sem_df %>%
   scale_fill_discrete(name = "Seeding Density") + 
   theme_bw() 
 
+sem_df %>%
+  ggplot(aes(x = mean_gsp, y = cum_germ_perc_res)) + 
+  geom_point() + 
+  labs(
+    x = "Germination Speed", 
+    y = "% Germination") +
+  theme_bw() 
+
 # model fit
-glm_res_germ_rich_dens <- glm(
-  cum_germ_perc_res ~ richness_id*density_id, 
+glm_res_germ <- glm(
+  cum_germ_perc_res ~ richness_id*density_id + mean_gsp, 
   family = binomial(link = "logit"), 
   weights = sown_seeds_res, 
   data = sem_df)
 
-# test global significance using one-way ANOVA
-car::Anova(glm_res_germ_rich_dens, type = "II")
-summary(glm_res_germ_rich_dens2)
-
 # sanity checks
-plot(glm_res_germ_rich_dens2, 1)
-plot(glm_res_germ_rich_dens2, 2)
-plot(glm_res_germ_rich_dens2, 3)
-plot(glm_res_germ_rich_dens2, 4)
+plot(glm_res_germ, 1)
+plot(glm_res_germ, 2)
+plot(glm_res_germ, 3)
+plot(glm_res_germ, 4)
 
-# check pairwise comparisons
-pairs_res_germ_rich_dens2 <- glm_res_germ_rich_dens2 %>%
-  emmeans::emmeans("richness_id") %>% 
-  pairs()
+summary(glm_res_germ)
 
 ## germination speed (resident) <- richness * density --------------------------
 
@@ -108,15 +109,15 @@ sem_df %>%
   theme_bw() 
 
 # model fit
-glm_gsp_rich_dens <- glm(
+glm_res_gsp <- glm(
   mean_gsp ~ density_id*richness_id, 
   family = Gamma(link = "log"), 
   data = sem_df)
 
 # test global significance using one-way ANOVA
-car::Anova(glm_gsp_rich_dens , type = "II")
+car::Anova(glm_res_gsp , type = "II")
 
-## RGR height (resident) <- richness * density ---------------------------------
+## RGR height (resident) <- richness * density + % germination (resident) ------
 
 # visualize data before running models
 sem_df %>%
@@ -129,104 +130,36 @@ sem_df %>%
   theme_bw() 
 
 # model fit 
-lm_height_rich_dens <- lm(
-  mean_rgr_height_res ~ richness_id*density_id, 
+lm_res_height <- lm(
+  mean_rgr_height_res ~ richness_id*density_id + cum_germ_perc_res, 
   data = sem_df)
 
 # test global significance using one-way ANOVA
-car::Anova(lm_height_rich_dens, type = "II")
-summary(lm_height_rich_dens) 
+car::Anova(lm_res_height, type = "II")
+summary(lm_res_height) 
 
 # sanity checks
-plot(lm_height_rich_dens, 1)
-plot(lm_height_rich_dens, 2)
-plot(lm_height_rich_dens, 3)
-plot(lm_height_rich_dens, 4)
+plot(lm_res_height, 1)
+plot(lm_res_height, 2)
+plot(lm_res_height, 3)
+plot(lm_res_height, 4)
 
 # check pairwise comparisons
-pairs_height_rich_dens <- lm_height_rich_dens %>%
+pairs_height_rich_dens <- lm_res_height %>%
   emmeans::emmeans("density_id") %>% 
   pairs()
 
-
-## % germination (resident) <- germination speed (resident) --------------------
-
-# visualize data before running models 
-sem_df %>%
-  ggplot(aes(x = mean_gsp, y = cum_germ_perc_res)) + 
-  geom_point() + 
-  labs(
-    x = "Germination Speed", 
-    y = "% Germination") +
-  theme_bw() 
-
-# model fit 
-glm_res_germ_gsp <- glm(cum_germ_perc_res ~ mean_gsp, 
-    family = binomial(link = "logit"), 
-    weights = sown_seeds_res, 
-    data = sem_df
-    )
-
-summary(glm_res_germ_gsp)
-
-# sanity check 
-plot(glm_res_germ_gsp, 1)
-plot(glm_res_germ_gsp, 2)
-plot(glm_res_germ_gsp, 3)
-plot(glm_res_germ_gsp, 4)
-
-## RGR height (resident) <- % germination (resident) ---------------------------
+## biomass (resident) <- % germination (resident) + height (resident) ----------
 
 # visualize data before running models
 sem_df %>%
-  ggplot(aes(x = cum_germ_perc_res, y = mean_rgr_height_res)) + 
-  geom_point() + 
-  labs(
-    x = "Percent Germination of Resident Community", 
-    y = "Relative Growth Rate (Height)") +
-  scale_fill_discrete(name = "Seeding Density") + 
-  theme_bw() 
-
-# model fit
-lm_height_germ_res <- lm(
-  mean_rgr_height_res ~ cum_germ_perc_res, 
-  data = sem_df)
-
-summary(lm_height_germ_res)
-
-# sanity checks
-plot(lm_height_germ_res, 1)
-plot(lm_height_germ_res, 2)
-plot(lm_height_germ_res, 3)
-plot(lm_height_germ_res, 4)
-
-## community biomass (resident) <- % germination (resident) --------------------
-
-# visualize data before running models
-sem_df %>%
-  ggplot(aes(x = cum_germ_perc_res, y = res_comm_biomass_g)) + 
+  ggplot(aes(x = res_comm_biomass_g, y = cum_germ_perc_res)) + 
   geom_point() + 
   labs(
     x = "Percent Germination of Resident Community", 
     y = "Resident Community Biomass (in g)") + 
   theme_bw() 
 
-# model fit
-lm_bm_germ_res <- lm(
-  res_comm_biomass_g ~ cum_germ_perc_res, 
-  data = sem_df)
-
-summary(lm_bm_germ_res)
-
-# sanity checks
-plot(lm_bm_germ_res, 1)
-plot(lm_bm_germ_res, 2)
-plot(lm_bm_germ_res, 3)
-plot(lm_bm_germ_res, 4)
-
-## community biomass (resident) <- RGR height (resident) -----------------------
-
-# visualizing data before running models
 sem_df %>%
   ggplot(aes(x = mean_rgr_height_res, y = res_comm_biomass_g)) + 
   geom_point() + 
@@ -236,17 +169,17 @@ sem_df %>%
   theme_bw() 
 
 # model fit
-lm_bm_height_res <- lm(
-  res_comm_biomass_g ~ mean_rgr_height_res,
+lm_res_bm <- lm(
+  res_comm_biomass_g ~ cum_germ_perc_res + mean_rgr_height_res, 
   data = sem_df)
 
-summary(lm_bm_height_res)
+summary(lm_bm_res)
 
-# sanity check
-plot(lm_bm_height_res, 1)
-plot(lm_bm_height_res, 2)
-plot(lm_bm_height_res, 3)
-plot(lm_bm_height_res, 4)
+# sanity checks
+plot(lm_res_bm, 1)
+plot(lm_res_bm, 2)
+plot(lm_res_bm, 3)
+plot(lm_res_bm, 4)
 
 ## % germination (invader) <- community biomass (resident) ---------------------
 
@@ -259,44 +192,37 @@ sem_df %>%
   theme_bw() 
 
 # model fit
-glm_res_bm_germ_inv <- glm(
+glm_inv_germ <- glm(
   cum_germ_perc_ciar ~ res_comm_biomass_g, 
   family = binomial(link = "logit"),
   data = sem_df
   )
 
-summary(glm_res_bm_germ_inv)
+summary(glm_inv_germ)
 
 # sanity checks
-plot(glm_res_bm_germ_inv, 1)
-plot(glm_res_bm_germ_inv, 2)
-plot(glm_res_bm_germ_inv, 3)
-plot(glm_res_bm_germ_inv, 4)
+plot(glm_inv_germ, 1)
+plot(glm_inv_germ, 2)
+plot(glm_inv_germ, 3)
+plot(glm_inv_germ, 4)
 
-## community biomass (resident) <- RGR height (invader) ------------------------
+## RGR height (invader) <- community biomass (resident) ------------------------
 
 # visualize data before running models 
-sem_df %>%
-  ggplot(aes(x = res_comm_biomass_mg, y =  mean_rgr_height_ciar)) + 
-  geom_point() + 
-  labs(x = "Resident Community Biomass",
-       y = "Relative Growth Rate (Height of Invader)") + 
-  theme_bw() 
-
-lm_res_bm_height_inv <- lm(
+lm_inv_height <- lm(
   mean_rgr_height_ciar ~ res_comm_biomass_g, 
   data = sem_df
 )
 
-summary(lm_res_bm_height_inv)
+summary(lm_inv_height)
 
 # sanity checks
-plot(lm_res_bm_height_inv, 1)
-plot(lm_res_bm_height_inv, 2)
-plot(lm_res_bm_height_inv, 3)
-plot(lm_res_bm_height_inv, 4)
+plot(lm_inv_height, 1)
+plot(lm_inv_height, 2)
+plot(lm_inv_height, 3)
+plot(lm_inv_height, 4)
 
-## biomass (invader) <- % germination (invader) --------------------------------
+## biomass (invader) <- % germination (invader) + height (invader) + SLA -------
 
 # visualize data before running models
 sem_df %>%
@@ -321,22 +247,22 @@ sem_df %>%
   theme_bw() 
 
 # model fit
-lm_bm_inv <- lm(
+lm_inv_bm <- lm(
   log(tot_inv_bm_g) ~ cum_germ_perc_ciar + mean_rgr_height_ciar + wds_sla, 
   data = sem_df
 )
 
-summary(lm_bm_inv)
+summary(inv_bm)
 
 # sanity checks
-plot(lm_bm_inv, 1)
-plot(lm_bm_inv, 2)
-plot(lm_bm_inv, 3)
-plot(lm_bm_inv, 4)
+plot(lm_inv_bm, 1)
+plot(lm_inv_bm, 2)
+plot(lm_inv_bm, 3)
+plot(lm_inv_bm, 4)
 
 ## CWM SLA (resident) <- community biomass (resident) --------------------------
 
-# a potential non-linear relationship seen in the raw data
+# visualize data before running models
 sem_df %>% 
   ggplot(aes(x = res_comm_biomass_g, y = wds_sla)) + 
   geom_point() + 
@@ -344,54 +270,30 @@ sem_df %>%
        y = "Mean Weighted Community Dissimilarity") + 
   theme_bw() 
 
-# fit using ordinary least squares 
-lm_sla_res_bm <- lm(
-  wds_sla ~ res_comm_biomass_g,
-  data = sem_df
-)
-
-# fit using generalized additive model
-gam_sla_res_bm <- mgcv::gam(
-  wds_sla ~ s(res_comm_biomass_g), 
-  family = Gamma(link = "log"),
-  method = "ML",
-  data = sem_df
-)
-
-# fit using a generalized linear model 
-glm_sla_res_bm <- glm(
+# model fit
+glm_res_sla <- glm(
   wds_sla ~ res_comm_biomass_g,
   family = Gamma(link = "log"),
   data = sem_df
 )
 
-# compare these two models
-# values are very similar between GLM and GAM, so just choose the simpler model
-AIC(gam_sla_res_bm, glm_sla_res_bm, lm_sla_res_bm)
-
-summary(glm_sla_res_bm)
+summary(glm_res_sla)
 
 # sanity checks
-plot(glm_sla_res_bm, 1)
-plot(glm_sla_res_bm, 2)
-plot(glm_sla_res_bm, 3)
-plot(glm_sla_res_bm, 4)
+plot(glm_res_sla, 1)
+plot(glm_res_sla, 2)
+plot(glm_res_sla, 3)
+plot(glm_res_sla, 4)
 
 # run piecewise SEM ------------------------------------------------------------
 
 sem_germ <- piecewiseSEM::psem(
-  glm_res_germ_rich_dens,
-  glm_gsp_rich_dens,
-  lm_height_rich_dens,
-  glm_res_germ_gsp,
-  lm_height_germ_res,
-  lm_bm_germ_res,
-  lm_bm_height_res,
-  glm_res_bm_germ_inv,
-  lm_res_bm_height_inv,
-  lm_bm_inv_germ_inv,
-  lm_bm_inv_height_inv,
-  lm_bm_inv_germ_inv,
-  lm_sla_inv_bm,
-  lm_sla_res_bm
+  glm_res_germ,
+  glm_res_gsp,
+  lm_res_height,
+  lm_res_bm,
+  glm_res_sla,
+  glm_inv_germ,
+  lm_inv_height,
+  lm_inv_bm
 )
