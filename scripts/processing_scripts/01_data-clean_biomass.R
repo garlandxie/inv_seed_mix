@@ -113,6 +113,3 @@ write.csv(
   x = bm_tidy, 
   file = here("data", "intermediate_data", "biomass.csv")
 )
-
-
-

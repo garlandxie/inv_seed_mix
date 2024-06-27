@@ -1,6 +1,7 @@
 # libraries --------------------------------------------------------------------
 library(dplyr)      # for manipulating data
 library(here)       # for creating relative file paths
+library(lubridate)   # for manipulating date time classes 
 
 # import -----------------------------------------------------------------------
 height_raw <- read.csv(here("data", "input_data", "height.csv"))

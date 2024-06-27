@@ -231,5 +231,5 @@ c_germ <- left_join(
 
 write.csv(
   c_germ, 
-  file = here("data", "intermediate_data", "c_germ_week.csv")
+  file = here("data", "intermediate_data", "c_germ.csv")
 )
