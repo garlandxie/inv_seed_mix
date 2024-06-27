@@ -119,7 +119,7 @@ rgr_height <- left_join(
 # save to disk -----------------------------------------------------------------
 
 write.csv(
-  height_final, 
+  rgr_height, 
   file = here("data", "intermediate_data", "rgr_height.csv"),
   row.names = FALSE
 )
