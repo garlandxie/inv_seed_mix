@@ -31,7 +31,7 @@ height_tidy <- height_raw %>%
     )
   )
 
-# calculate summary statistics
+## calculate summary statistics -------------------------------------------------
 height_summ1 <- height_tidy %>%
   group_by(Session, Tray_ID, Richness_ID, Density_ID, Rep, Spp) %>%
   summarize(
@@ -78,6 +78,8 @@ height_summ <- height_summ_earl %>%
     by = c("Richness_ID", "Density_ID", "Rep", "Spp")
   )
 
+## calculate time difference ---------------------------------------------------
+
 # calculate time difference (t2 - t1) between late and early sampling
 # for the relative growth rate (log(r2) - log(r1))/t2 - t1
 time_diff_earl_late <- as.numeric(ymd("2023-06-22") - ymd("2023-04-18"))
@@ -91,6 +93,28 @@ height_final <- height_summ %>%
     rgr_height = log_diff/time_diff_earl_late,
     rgr_height = round(rgr_height, digits = 3)
   ) 
+
+## split into invasive + native ------------------------------------------------
+rgr_height_res <- height_final %>%
+  dplyr::filter(Spp != "CIAR") %>%
+  group_by(Richness_ID, Density_ID, Rep) %>%
+  summarize(
+    mean_rgr_height_res = mean(rgr_height, na.rm = TRUE),
+    mean_rgr_height_res = round(mean_rgr_height_res, digits = 2)
+  ) %>%
+  ungroup() %>%
+  janitor::clean_names()
+
+rgr_height_ciar <- height_final %>%
+  dplyr::filter(Spp == "CIAR") %>%
+  rename(mean_rgr_height_ciar = rgr_height) %>%
+  janitor::clean_names()
+
+rgr_height <- left_join(
+  rgr_height_ciar, 
+  rgr_height_res, 
+  by = c("richness_id", "density_id", "rep")
+)
 
 # save to disk -----------------------------------------------------------------
 
