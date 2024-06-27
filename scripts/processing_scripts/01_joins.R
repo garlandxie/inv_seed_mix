@@ -83,7 +83,7 @@ sem_df %>%
 
 # model fit
 glm_res_germ <- glm(
-  cum_germ_perc_res ~ richness_id*density_id + mean_gsp, 
+  cum_germ_perc_res ~ richness_id + density_id + mean_gsp, 
   family = binomial(link = "logit"), 
   weights = sown_seeds_res, 
   data = sem_df)
@@ -110,14 +110,14 @@ sem_df %>%
 
 # model fit
 glm_res_gsp <- glm(
-  mean_gsp ~ density_id*richness_id, 
+  mean_gsp ~ density_id + richness_id, 
   family = Gamma(link = "log"), 
   data = sem_df)
 
 # test global significance using one-way ANOVA
 car::Anova(glm_res_gsp , type = "II")
 
-## RGR height (resident) <- richness * density + % germination (resident) ------
+## RGR height (resident) <- richness * density ---------------------------------
 
 # visualize data before running models
 sem_df %>%
@@ -131,7 +131,7 @@ sem_df %>%
 
 # model fit 
 lm_res_height <- lm(
-  mean_rgr_height_res ~ richness_id*density_id + cum_germ_perc_res, 
+  mean_rgr_height_res ~ richness_id + density_id, 
   data = sem_df)
 
 # test global significance using one-way ANOVA
@@ -297,3 +297,5 @@ sem_germ <- piecewiseSEM::psem(
   lm_inv_height,
   lm_inv_bm
 )
+
+summary(sem_germ, conserve = TRUE)
