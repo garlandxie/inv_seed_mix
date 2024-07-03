@@ -95,13 +95,6 @@ lm_inv_height <- lm(
 
 summary(lm_inv_height)
 
-## root biomass (invader) <- root biomass (resident) ---------------------------
-
-lm_inv_roots_bm <- lm(inv_roots_bm_g ~ res_root_bm_g, 
-   data = sem_df)
-
-summary(lm_inv_roots_bm)
-
 ## abg biomass (invader) <- % germination (invader) + height (invader) + SLA ---
 
 # model fit
@@ -134,7 +127,10 @@ sem_germ <- piecewiseSEM::psem(
 )
 
 summary_psem <- summary(sem_germ, conserve = TRUE) 
-piecewiseSEM::dSep(sem_germ, conserve = TRUE)
+dSep1 <- sem_germ %>%
+  piecewiseSEM::dSep(conserve = TRUE) %>%
+  data.frame() %>%
+  mutate(run = 1) 
 
 # revised models: resident community -------------------------------------------
 
@@ -144,25 +140,121 @@ piecewiseSEM::dSep(sem_germ, conserve = TRUE)
 
 lm_inv_height2 <- update(lm_inv_height, . ~ . + mean_rgr_height_res)
 
-## 2.CWM SLA (resident) <- .~. germinability (resident) ------------------------
+## 2. run piecewise SEM 2-----------------------------------------------------------
+
+rev_sem_germ2 <- piecewiseSEM::psem(
+  
+  # resident community 
+  glm_res_germ,
+  glm_res_mgr,
+  lm_res_height,
+  lm_res_abg_bm,
+  glm_res_sla,
+  lm_res_sr,
+  
+  # invader
+  glm_inv_germ,
+  lm_inv_height2,
+  lm_inv_bm
+)
+
+rev_summary_psem2 <- summary(rev_sem_germ2, conserve = TRUE) 
+dSep2 <- rev_sem_germ2 %>%
+  piecewiseSEM::dSep(conserve = TRUE) %>%
+  data.frame() %>%
+  mutate(run = 2)
+
+## 3. CWM SLA (resident) <- .~. germinability (resident) ------------------------
 
 glm_res_sla2 <- update(glm_res_sla, .~. + cum_germ_perc_res)
 
-## 3. Germination rate <- .~. height (resident) --------------------------------
+## 4. run piecewise SEM 3--------------------------------------------------------
+
+rev_sem_germ3 <- piecewiseSEM::psem(
+  
+  # resident community 
+  glm_res_germ,
+  glm_res_mgr,
+  lm_res_height,
+  lm_res_abg_bm,
+  glm_res_sla2,
+  lm_res_sr,
+  
+  # invader
+  glm_inv_germ,
+  lm_inv_height2,
+  lm_inv_bm
+)
+
+rev_summary_psem3 <- summary(rev_sem_germ3, conserve = TRUE) 
+dSep3 <- rev_sem_germ3 %>%
+  piecewiseSEM::dSep(conserve = TRUE) %>%
+  data.frame() %>%
+  mutate(run = 3)
+
+## 5. Germination rate (resident) <- .~. height (resident) ---------------------
 
 glm_res_mgr2 <- update(glm_res_mgr, .~. + mean_rgr_height_res)
 
-## 4. CWM SLA (resident) <- .~. species richness (resident) --------------------
+## 6. run piecewise SEM 4 -------------------------------------------------------
+
+rev_sem_germ4 <- piecewiseSEM::psem(
+  
+  # resident community 
+  glm_res_germ,
+  glm_res_mgr2,
+  lm_res_height,
+  lm_res_abg_bm,
+  glm_res_sla2,
+  lm_res_sr,
+  
+  # invader
+  glm_inv_germ,
+  lm_inv_height2,
+  lm_inv_bm
+)
+
+rev_summary_psem4 <- summary(rev_sem_germ4, conserve = TRUE) 
+dSep4 <- rev_sem_germ4 %>%
+  piecewiseSEM::dSep(conserve = TRUE) %>%
+  data.frame() %>%
+  mutate(run = 4)
+
+## 7. CWM SLA (resident) <- .~. species richness (resident) --------------------
 
 glm_res_sla3 <- update(glm_res_sla2, .~. + realized_sr)
 
-## 5. Percent germination <- .~. height (resident) -----------------------------
+## 8. run piecewise SEM 5 ------------------------------------------------------
+
+rev_sem_germ5 <- piecewiseSEM::psem(
+  
+  # resident community 
+  glm_res_germ,
+  glm_res_mgr2,
+  lm_res_height,
+  lm_res_abg_bm,
+  glm_res_sla3,
+  lm_res_sr,
+  
+  # invader
+  glm_inv_germ,
+  lm_inv_height2,
+  lm_inv_bm
+)
+
+rev_summary_psem5 <- summary(rev_sem_germ5, conserve = TRUE) 
+dSep5 <- rev_sem_germ5 %>%
+  piecewiseSEM::dSep(conserve = TRUE) %>%
+  data.frame() %>%
+  mutate(run = 5)
+
+## 9. Percent germination <- .~. height (resident) -----------------------------
 
 glm_res_germ2 <- update(glm_res_germ, .~. + mean_rgr_height_res)
 
-# run piecewise SEM 2-----------------------------------------------------------
+## 10. final piecewise SEM -----------------------------------------------------
 
-rev_sem_germ <- piecewiseSEM::psem(
+rev_sem_germ6 <- piecewiseSEM::psem(
   
   # resident community 
   glm_res_germ2,
@@ -178,7 +270,30 @@ rev_sem_germ <- piecewiseSEM::psem(
   lm_inv_bm
 )
 
-rev_summary_psem <- summary(rev_sem_germ, conserve = TRUE) 
-piecewiseSEM::dSep(rev_sem_germ, conserve = TRUE)
+rev_summary_psem6 <- summary(rev_sem_germ6, conserve = TRUE) 
+stand_coefs <- piecewiseSEM::coefs(rev_sem_germ6, standardize = "range", 
+                                   standardize.type = "Menard.OE")
 
-View(rev_summary_psem$coefficients)
+# save to disk -----------------------------------------------------------------
+
+# clean up the d-sep test a bit before saving it to disk
+d_sep_df <- dSep1 %>%
+  rbind(dSep2) %>%
+  rbind(dSep3) %>%
+  rbind(dSep4) %>%
+  rbind(dSep5) %>%
+  janitor::clean_names() %>%
+  dplyr::filter(p_value < 0.05)  %>%
+  mutate(crit_value = round(crit_value, digits = 2)) %>%
+  select(
+    run, 
+    independ_claim, 
+    df, 
+    crit_value, 
+    var_6)
+  
+write.csv(
+  x = d_sep_df, 
+  file = here("output", "data_appendix_output", "table_s2_dsep.csv"), 
+  row.names = FALSE
+)
