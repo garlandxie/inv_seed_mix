@@ -2,6 +2,8 @@
 library(dplyr)          # for manipulating data
 library(here)           # for creating relative file paths
 library(piecewiseSEM)   # for calculating piecewise structural equation models
+library(ggplot2)        # for obtaining partial residuals
+library(patchwork)
 
 # import -----------------------------------------------------------------------
 
@@ -44,13 +46,13 @@ lm_res_abg_bm <- lm(
   res_abg_bm_g ~ cum_germ_perc_res + mean_rgr_height_res + realized_sr, 
   data = sem_df)
 
-summary(lm_res_bm)
+summary(lm_res_abg_bm)
 
 ## species richness (resident) <- % germination (resident) ---------------------
 
 lm_res_sr <- lm(realized_sr ~ cum_germ_perc_res + richness_id, data = sem_df)
 
-summary(lm_sr)
+summary(lm_res_sr)
 
 ## root biomass (resident) <- % germination ------------------------------------
 
@@ -224,6 +226,9 @@ dSep4 <- rev_sem_germ4 %>%
 
 glm_res_sla3 <- update(glm_res_sla2, .~. + realized_sr)
 
+# double-check collinearity
+car::vif(glm_res_sla3)
+
 ## 8. run piecewise SEM 5 ------------------------------------------------------
 
 rev_sem_germ5 <- piecewiseSEM::psem(
@@ -274,26 +279,229 @@ rev_summary_psem6 <- summary(rev_sem_germ6, conserve = TRUE)
 stand_coefs <- piecewiseSEM::coefs(rev_sem_germ6, standardize = "range", 
                                    standardize.type = "Menard.OE")
 
+# data visualization -----------------------------------------------------------
+
+## get partial residuals -------------------------------------------------------
+
+# for wds sla 
+visreg_wds_res <- visreg::visreg(
+  glm_res_sla3, "res_abg_bm_g", 
+  type = "conditional") 
+
+visreg_wds_germ <- visreg::visreg(
+  glm_res_sla3, "cum_germ_perc_res", 
+  type = "conditional") 
+
+visreg_wds_sr <- visreg::visreg(
+  glm_res_sla3, "realized_sr", 
+  type = "conditional") 
+
+# for invader biomass
+visreg_sla <- visreg::visreg(
+  lm_inv_bm, "wds_sla", 
+  type= "conditional") 
+
+## plot wds sla ----------------------------------------------------------------
+
+# partial R2
+part2_res_sla <- sensemakr::partial_r2(glm_res_sla3)
+
+# p-values for each predictor variable
+sum_res_sla <- summary(glm_res_sla3)
+
+p_bm <- sum_res_sla$coefficients["res_abg_bm_g", "Pr(>|t|)"] 
+p_bm <- ifelse(p_bm < 0.01, "<0.01")
+
+p_germ <- sum_res_sla$coefficients["cum_germ_perc_res", "Pr(>|t|)"] 
+p_germ <- ifelse(p_germ < 0.001, "<0.001")
+
+p_sr <- sum_res_sla$coefficients["realized_sr", "Pr(>|t|)"]
+p_sr <- ifelse(p_sr < 0.001, "<0.001")
+
+(plot_wds_abg <- 
+  ggplot() + 
+   
+  # partial residuals
+  geom_point(
+    aes(x = res_abg_bm_g, y = visregRes), 
+    alpha = 0.5, 
+    data = visreg_wds_res$res
+    ) +
+   
+   # 95% confidence interval
+   geom_line(
+     aes(x = res_abg_bm_g, y = visregFit), 
+     col = "blue", 
+     linewidth = 0.75, 
+     data = visreg_wds_res$fit
+   ) +
+   geom_ribbon(
+     aes(x = res_abg_bm_g, y = visregFit,
+         ymin = visregLwr, ymax = visregUpr), 
+     col = "grey", 
+     alpha = 0.1, 
+     data = visreg_wds_res$fit
+   ) + 
+   
+  labs(
+    x = "Aboveground community biomass (g)",
+    y = "Partial residuals (CWM SLA - C. arvense)") + 
+   
+  annotate("text", x = 1, y = 0.25, label = "A)") + 
+  scale_y_continuous(breaks = c(0, 0.05, 0.10, 0.15, 0.20, 0.25)) + 
+  xlim(0, 15) + 
+  ylim(-0.05, 0.25) + 
+  theme_bw()
+)
+
+(plot_wds_germ <- 
+    ggplot() + 
+    
+    # partial residuals 
+    geom_point(
+      aes(x = cum_germ_perc_res, y = visregRes), 
+      alpha = 0.5,
+      data = visreg_wds_germ$res
+    ) + 
+    
+    # 95% confidence interval
+    geom_line(
+      aes(x = cum_germ_perc_res, y = visregFit), 
+      col = "blue", 
+      linewidth = 0.75, 
+      data = visreg_wds_germ$fit
+    ) +
+    geom_ribbon(
+      aes(x = cum_germ_perc_res, y = visregFit,
+          ymin = visregLwr, ymax = visregUpr), 
+      col = "grey", 
+      alpha = 0.1, 
+      data = visreg_wds_germ$fit
+    ) + 
+  annotate("text", x = 0.1, y = 0.25, label = "B)") + 
+  scale_y_continuous(breaks = c(0, 0.05, 0.10, 0.15, 0.20, 0.25)) + 
+  xlim(0, 1) + 
+  ylim(-0.05, 0.25) +
+  labs(
+    x = "Germinability of resident community (%)",
+    y = NULL) + 
+  theme_bw() + 
+  theme(axis.text.y = element_blank())
+)
+
+(plot_wds_sr <- 
+  ggplot() + 
+  
+  # partial residuals
+  geom_point(
+    aes(x = realized_sr, y = visregRes), 
+    alpha = 0.5, 
+    data = visreg_wds_sr$res
+  ) + 
+  
+  # 95% confidence interval
+  geom_line(
+    aes(x = realized_sr, y = visregFit), 
+    col = "blue", 
+    linewidth = 0.75, 
+    data = visreg_wds_sr$fit
+    ) +
+  geom_ribbon(
+    aes(x = realized_sr, y = visregFit,
+        ymin = visregLwr, ymax = visregUpr), 
+    col = "grey", 
+    alpha = 0.1, 
+    data = visreg_wds_sr$fit
+    ) +
+  annotate("text", x = 1.2, y = 0.25, label = "C)") + 
+  scale_y_continuous(breaks = c(0, 0.05, 0.10, 0.15, 0.20, 0.25)) + 
+  ylim(-0.05, 0.25) + 
+  labs(
+    x = "Realized species richness",
+    y = NULL) + 
+  theme_bw() + 
+  theme(axis.text.y = element_blank())
+)
+
+(plot_wds <- plot_wds_abg + plot_wds_germ + plot_wds_sr)
+
+## plot invader biomass---------------------------------------------------------
+
+# get info for annotation
+
+# partial R2
+part2_inv_bm <-sensemakr::partial_r2(lm_inv_bm)
+part2_inv_bm["wds_sla"]
+
+# p-value of the full linear model
+f_inv_bm <- summary(lm_inv_bm)$fstatistic
+p_inv_bm <- pf(
+   f_inv_bm["value"], 
+   f_inv_bm["numdf"],
+   f_inv_bm["dendf"], 
+   lower.tail = FALSE
+   ) 
+p_inv_bm <- ifelse(p_inv_bm < 0.001, "<0.001")
+
+(plot_sla_v_inv <- 
+  ggplot() +
+    
+  # partial residuals
+  geom_point(
+    aes(x = wds_sla, y = visregRes), 
+    data = visreg_sla$res) + 
+ 
+  # 95% confidence interval
+    geom_line(
+    aes(x = wds_sla, y = visregFit), 
+    col = "blue", 
+    linewidth = 0.75, 
+    data = visreg_sla$fit
+  ) +
+  geom_ribbon(
+    aes(x = wds_sla, y = visregFit,
+        ymin = visregLwr, ymax = visregUpr), 
+    col = "grey", 
+    alpha = 0.1, 
+    data = visreg_sla$fit
+  ) + 
+  annotate(
+     "text", 
+     x = 0.20, 
+     y = 4.9, 
+     label = paste("partial R2:", round(part2_inv_bm["wds_sla"], digits = 2))
+   ) + 
+  annotate(
+     "text", 
+     x = 0.185, 
+     y = 4.6, 
+     label = paste0(
+       "F(", f_inv_bm["numdf"], ",", f_inv_bm["dendf"], ")", " = ",
+       round(f_inv_bm["value"], digits = 2), ", p", p_inv_bm)
+   ) + 
+  labs(
+    x = expression(paste("| CWM SLA - ", italic("Cirsium arvense"), " |")),
+    y = "Partial residuals (invader biomass)",
+    ) +  
+  theme_bw() 
+)
+
 # save to disk -----------------------------------------------------------------
 
-# clean up the d-sep test a bit before saving it to disk
-d_sep_df <- dSep1 %>%
-  rbind(dSep2) %>%
-  rbind(dSep3) %>%
-  rbind(dSep4) %>%
-  rbind(dSep5) %>%
-  janitor::clean_names() %>%
-  dplyr::filter(p_value < 0.05)  %>%
-  mutate(crit_value = round(crit_value, digits = 2)) %>%
-  select(
-    run, 
-    independ_claim, 
-    df, 
-    crit_value, 
-    var_6)
-  
-write.csv(
-  x = d_sep_df, 
-  file = here("output", "data_appendix_output", "table_s2_dsep.csv"), 
-  row.names = FALSE
+ggsave(
+  plot = plot_sla_v_inv, 
+  filename = here("output", "results", "fig_sla_v_inv.png"), 
+  device = "png", 
+  units = "in", 
+  height = 5, 
+  width = 5
+)
+
+ggsave(
+  plot = plot_wds, 
+  filename = here("output", "results", "fig_wds_sla.png"),
+  device = "png", 
+  units = "in", 
+  height = 4, 
+  width = 10
 )
