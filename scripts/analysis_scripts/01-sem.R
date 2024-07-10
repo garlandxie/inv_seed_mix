@@ -310,13 +310,13 @@ part2_res_sla <- sensemakr::partial_r2(glm_res_sla3)
 sum_res_sla <- summary(glm_res_sla3)
 
 p_bm <- sum_res_sla$coefficients["res_abg_bm_g", "Pr(>|t|)"] 
-p_bm <- ifelse(p_bm < 0.01, "<0.01")
+p_bm <- ifelse(p_bm < 0.01, "p<0.01")
 
 p_germ <- sum_res_sla$coefficients["cum_germ_perc_res", "Pr(>|t|)"] 
-p_germ <- ifelse(p_germ < 0.001, "<0.001")
+p_germ <- ifelse(p_germ < 0.001, "p<0.001")
 
 p_sr <- sum_res_sla$coefficients["realized_sr", "Pr(>|t|)"]
-p_sr <- ifelse(p_sr < 0.001, "<0.001")
+p_sr <- ifelse(p_sr < 0.001, "p<0.001")
 
 (plot_wds_abg <- 
   ggplot() + 
@@ -345,9 +345,29 @@ p_sr <- ifelse(p_sr < 0.001, "<0.001")
    
   labs(
     x = "Aboveground community biomass (g)",
-    y = "Partial residuals (CWM SLA - C. arvense)") + 
-   
-  annotate("text", x = 1, y = 0.25, label = "A)") + 
+    y = expression(
+      paste("Partial residuals (",
+            "| CWM SLA - ", 
+            italic("Cirsium arvense"), " |)"
+            )
+      )
+    ) + 
+  annotate("text", x = 1,  y = 0.25, label = "A)") + 
+  annotate(
+    "text", 
+    x = 12, 
+    y = 0.23, 
+    label = paste(
+      "partial R2:", 
+      round(part2_res_sla["res_abg_bm_g"], digits = 2)
+      )
+    ) +
+  annotate(
+    "text", 
+    x = 11, 
+    y = 0.215, 
+    label = p_bm
+  ) + 
   scale_y_continuous(breaks = c(0, 0.05, 0.10, 0.15, 0.20, 0.25)) + 
   xlim(0, 15) + 
   ylim(-0.05, 0.25) + 
@@ -378,7 +398,24 @@ p_sr <- ifelse(p_sr < 0.001, "<0.001")
       alpha = 0.1, 
       data = visreg_wds_germ$fit
     ) + 
+    
+  # add annotations
   annotate("text", x = 0.1, y = 0.25, label = "B)") + 
+  annotate(
+    "text", 
+    x = 0.80, 
+    y = 0.23, 
+    label = paste(
+      "partial R2:", 
+      round(part2_res_sla["cum_germ_perc_res"], digits = 2)
+      )
+    ) +
+    annotate(
+      "text", 
+      x = 0.72, 
+      y = 0.215, 
+      label = p_bm
+    ) + 
   scale_y_continuous(breaks = c(0, 0.05, 0.10, 0.15, 0.20, 0.25)) + 
   xlim(0, 1) + 
   ylim(-0.05, 0.25) +
@@ -403,7 +440,7 @@ p_sr <- ifelse(p_sr < 0.001, "<0.001")
   geom_line(
     aes(x = realized_sr, y = visregFit), 
     col = "blue", 
-    linewidth = 0.75, 
+    linewidth = 0.65, 
     data = visreg_wds_sr$fit
     ) +
   geom_ribbon(
@@ -414,6 +451,21 @@ p_sr <- ifelse(p_sr < 0.001, "<0.001")
     data = visreg_wds_sr$fit
     ) +
   annotate("text", x = 1.2, y = 0.25, label = "C)") + 
+  annotate(
+    "text", 
+    x = 3.4, 
+    y = 0.23, 
+    label = paste(
+      "partial R2:", 
+      round(part2_res_sla["realized_sr"], digits = 2)
+      )
+    ) +
+  annotate(
+    "text", 
+    x = 3.2, 
+    y = 0.215, 
+    label = p_sr
+    ) +
   scale_y_continuous(breaks = c(0, 0.05, 0.10, 0.15, 0.20, 0.25)) + 
   ylim(-0.05, 0.25) + 
   labs(
