@@ -15,13 +15,12 @@ sem_df <- read.csv(here("data", "analysis_data", "sem.csv"))
 
 # model fit
 glm_res_germ <- glm(
-  cum_germ_perc_res ~  mean_mgr, 
+  cum_germ_perc_res ~ mean_mgr,
   family = binomial(link = "logit"), 
   weights = sown_seeds_res, 
-  data = sem_df)
-
-summary(glm_res_germ)
-
+  data = sem_df
+  )
+ 
 ## germination speed (resident) <- richness + density --------------------------
 
 # model fit
@@ -129,6 +128,7 @@ sem_germ <- piecewiseSEM::psem(
 )
 
 summary_psem <- summary(sem_germ, conserve = TRUE) 
+
 dSep1 <- sem_germ %>%
   piecewiseSEM::dSep(conserve = TRUE) %>%
   data.frame() %>%
@@ -538,7 +538,107 @@ p_inv_bm <- ifelse(p_inv_bm < 0.001, "<0.001")
   theme_bw() 
 )
 
-# save to disk -----------------------------------------------------------------
+## plot early plant stage ------------------------------------------------------
+
+visreg_cum_germ <- visreg::visreg(
+  glm_res_germ2, "mean_mgr", 
+  type = "conditional"
+)
+
+visreg_res_height <- visreg::visreg(
+  glm_res_germ2, "mean_rgr_height_res", 
+  type = "conditional"
+)
+
+(plot_mgr_germ <- ggplot() +
+  geom_rug(aes(x = mean_mgr), data = visreg_cum_germ$res) + 
+  geom_line(
+    aes(x = mean_mgr, y = exp(visregFit)), 
+    col = "blue", 
+    data = visreg_cum_germ$fit
+    ) + 
+    geom_ribbon(
+      aes(x = mean_mgr, y = exp(visregFit),
+          ymin = exp(visregLwr), ymax = exp(visregUpr)
+          ), 
+      col = "grey", 
+      alpha = 0.1, 
+      data = visreg_cum_germ$fit
+    ) + 
+   ylim(0.3, 0.7) + 
+   labs(
+     x = "Mean Germination Rate", 
+     y = "Odds of higher germinability") + 
+   theme_bw()
+)
+
+visreg_mgr_height <- visreg::visreg(
+  glm_res_mgr2, "mean_rgr_height_res", 
+  type = "conditional"
+)
+
+(plot_mgr <- ggplot() + 
+    geom_point(
+      aes(x = mean_rgr_height_res, y = visregRes), 
+      data = visreg_mgr_height$res
+      )  + 
+    geom_line(
+      aes(x = mean_rgr_height_res, y = visregFit), 
+      col = "blue", 
+      data = visreg_mgr_height$fit
+    ) + 
+    geom_ribbon(
+      aes(x = mean_rgr_height_res, y = visregFit,
+          ymin = visregLwr, ymax = visregUpr
+      ), 
+      col = "grey", 
+      alpha = 0.1, 
+      data = visreg_mgr_height$fit
+    ) + 
+  labs(
+    x = "RGR height (resident)",
+    y = "Mean germination rate") + 
+  theme_bw()
+)
+
+(plot_height <- ggplot() + 
+    geom_rug(aes(x = mean_rgr_height_res), data = visreg_res_height$res) + 
+    geom_line(
+      aes(x = mean_rgr_height_res, y = exp(visregFit)), 
+      col = "blue", 
+      data = visreg_res_height$fit
+    ) + 
+    geom_ribbon(
+      aes(x = mean_rgr_height_res, y = exp(visregFit),
+          ymin = exp(visregLwr), ymax = exp(visregUpr)
+      ), 
+      col = "grey", 
+      alpha = 0.1, 
+      data = visreg_res_height$fit
+    ) + 
+    labs(
+      x = "RGR height (resident community)",
+      y = "Odds of higher germinability") + 
+    theme_bw()
+)
+
+res_height_emm <- emmeans::emmeans(lm_res_height, "density_id")
+multcomp::cld(res_height_emm)
+
+(plot_rich_dens <- sem_df %>% 
+    ggplot(aes(x = density_id, y = mean_rgr_height_res)) + 
+    geom_boxplot() + 
+    geom_jitter(width = 0.1, alpha = 0.1) + 
+    labs(
+      x = "Seeding density", 
+      y = "RGR height (resident)"
+      ) + 
+    theme_bw() 
+)
+
+(plot_early <- plot_mgr_germ + plot_mgr + plot_height + plot_rich_dens)
+
+# save to disk ----------------------------------------------------------------
 
 ggsave(
   plot = plot_sla_v_inv, 
