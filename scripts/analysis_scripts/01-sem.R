@@ -565,6 +565,7 @@ visreg_res_height <- visreg::visreg(
       alpha = 0.1, 
       data = visreg_cum_germ$fit
     ) + 
+   annotate("text", x = 0.12, y = 0.7, label = "A)") + 
    ylim(0.3, 0.7) + 
    labs(
      x = "Mean Germination Rate", 
@@ -595,7 +596,8 @@ visreg_mgr_height <- visreg::visreg(
       alpha = 0.1, 
       data = visreg_mgr_height$fit
     ) + 
-  labs(
+   annotate("text", x = 0.0015, y = -0.5, label = "B)") + 
+   labs(
     x = "RGR height (resident)",
     y = "Mean germination rate") + 
   theme_bw()
@@ -616,8 +618,9 @@ visreg_mgr_height <- visreg::visreg(
       alpha = 0.1, 
       data = visreg_res_height$fit
     ) + 
+    annotate("text", x = 0.0015, y = 0.51, label = "C)") + 
     labs(
-      x = "RGR height (resident community)",
+      x = "RGR height (resident)",
       y = "Odds of higher germinability") + 
     theme_bw()
 )
