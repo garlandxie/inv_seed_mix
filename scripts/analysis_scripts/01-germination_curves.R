@@ -2,6 +2,7 @@
 library(here)       # for creating relative file-paths
 library(dplyr)      # for manipulating data 
 library(ggplot2)    # for visualizing data  
+library(patchwork)  # for making multi-panel figures 
 
 # import ----
 c_germ <- read.csv(here("data", "input_data", "cumulative_germination.csv"))
@@ -107,43 +108,9 @@ c_germ_perc_tidy <- c_germ %>%
       cum_germ_perc_mofi
   ) 
 
-# data visualization ----
-
-## cumulative germination ----
-c_germ_viz <- c_germ_tidy %>%
-  group_by(week, richness_id, density_id) %>%
-  summarize(
-    mean_cum_germ_ciar = mean(cum_germ_ciar),
-    mean_cum_germ_oebi = mean(cum_germ_oebi),
-    mean_cum_germ_ruhi = mean(cum_germ_ruhi), 
-    mean_cum_germ_ange = mean(cum_germ_ange), 
-    mean_cum_germ_hehe = mean(cum_germ_hehe), 
-    mean_cum_germ_mofi = mean(cum_germ_mofi)
-  ) %>%
-  ungroup() %>%
-  dplyr::filter(
-    richness_id %in% c("M1", "M2", "M4"), 
-    density_id %in% c("D1", "D2", "D3")
-  ) 
-
-plot_c_germ <- c_germ_viz %>%
-  ggplot() +
-  geom_line(aes(x = week, y = mean_cum_germ_ciar), col = "purple") +
-  geom_line(aes(x = week, y = mean_cum_germ_oebi), col = "orange") + 
-  geom_line(aes(x = week, y = mean_cum_germ_ruhi), col = "red") + 
-  geom_line(aes(x = week, y = mean_cum_germ_ange), col = "blue") + 
-  geom_line(aes(x = week, y = mean_cum_germ_mofi), col = "green") + 
-  geom_line(aes(x = week, y = mean_cum_germ_hehe), col = "grey") +
-  scale_x_continuous(breaks = c(0,2,4,6,8,10,12)) + 
-  labs(
-    x = "Week of Observation", 
-    y = "Cumulative germination (%)") + 
-  facet_wrap(richness_id~density_id) + 
-  theme_bw()
-
 ## cumulative germination (as a percentage) -----
 
-c_germ_perc_tidy %>%
+c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
   group_by(week, density_id, richness_id) %>%
   summarize(
     mean_cum_perc_germ_ciar = mean(cum_germ_perc_ciar),
@@ -157,13 +124,182 @@ c_germ_perc_tidy %>%
   dplyr::filter(
     density_id %in% c("D1", "D2", "D3") & 
       richness_id %in% c("M1", "M2", "M4")
-  ) %>%
-  ggplot() +
+  ) 
+
+# data visualization: cumulative percentage germination ------------------------
+
+## M1 D1 -----------------------------------------------------------------------
+
+(plot_m1_d1 <- c_germ_perc_tidy2 %>%
+  dplyr::filter(richness_id == "M1" & density_id == "D1") %>% 
+  ggplot() + 
   geom_line(aes(x = week, y = mean_cum_perc_germ_oebi), col = "orange") + 
   geom_line(aes(x = week, y = mean_cum_perc_germ_ruhi), col = "red") + 
   geom_line(aes(x = week, y = mean_cum_perc_germ_ange), col = "blue") + 
   geom_line(aes(x = week, y = mean_cum_perc_germ_mofi), col = "green") +
-  geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "grey") + 
-  labs(x = "Week of Observation", y = "Cumulative germination") + 
-  facet_wrap(density_id~richness_id) + 
-  theme_bw() 
+  geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
+  scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
+  labs(x = NULL, y = NULL) + 
+  ylim(0, 3.0) + 
+  theme_bw() +
+  theme(axis.text.x = element_blank())
+)
+
+## M1 D2 -----------------------------------------------------------------------
+
+(plot_m1_d2 <- c_germ_perc_tidy2 %>%
+   dplyr::filter(richness_id == "M1" & density_id == "D2") %>% 
+   ggplot() + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_oebi), col = "orange") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ruhi), col = "red") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ange), col = "blue") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_mofi), col = "green") +
+   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
+   scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
+   labs(x = NULL, y = NULL) + 
+   ylim(0, 11.0) + 
+   theme_bw() + 
+   theme(axis.text.x = element_blank())
+)
+
+## M1 D3 -----------------------------------------------------------------------
+
+(plot_m1_d3 <- c_germ_perc_tidy2 %>%
+   dplyr::filter(richness_id == "M1" & density_id == "D3") %>% 
+   ggplot() + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_oebi), col = "orange") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ruhi), col = "red") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ange), col = "blue") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_mofi), col = "green") +
+   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
+   labs(x = NULL, y = NULL) + 
+   scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
+   ylim(0, 20) + 
+   theme_bw() +
+   theme(axis.text.x = element_blank())
+)
+
+## M2 D1 -----------------------------------------------------------------------
+
+(plot_m2_d1 <- c_germ_perc_tidy2 %>%
+   dplyr::filter(richness_id == "M2" & density_id == "D1") %>% 
+   ggplot() + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_oebi), col = "orange") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ruhi), col = "red") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ange), col = "blue") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_mofi), col = "green") +
+   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") +
+   scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
+   labs(x = NULL, y = NULL) + 
+   ylim(0, 3.0) + 
+   theme_bw() + 
+   theme(
+     axis.text.x = element_blank(),
+     axis.title.y = element_text(
+       size = 20,
+       margin = margin(t = 0, r = 10, b = 0, l = ))
+     )
+)
+
+## M2 D2 -----------------------------------------------------------------------
+
+(plot_m2_d2 <- c_germ_perc_tidy2 %>%
+   dplyr::filter(richness_id == "M2" & density_id == "D2") %>% 
+   ggplot() + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_oebi), col = "orange") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ruhi), col = "red") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ange), col = "blue") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_mofi), col = "green") +
+   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
+   scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
+   labs(x = NULL, y = NULL) + 
+   ylim(0, 11.0) + 
+   theme_bw() +
+   theme(axis.text.x = element_blank())
+)
+
+## M2 D3 -----------------------------------------------------------------------
+
+(plot_m2_d3 <- c_germ_perc_tidy2 %>%
+   dplyr::filter(richness_id == "M2" & density_id == "D3") %>% 
+   ggplot() + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_oebi), col = "orange") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ruhi), col = "red") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ange), col = "blue") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_mofi), col = "green") +
+   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
+   scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
+   labs(x = NULL, y = NULL) + 
+   ylim(0, 20) + 
+   theme_bw() + 
+   theme(axis.text.x = element_blank())
+)
+
+## M4 D1 -----------------------------------------------------------------------
+
+(plot_m4_d1 <- c_germ_perc_tidy2 %>%
+   dplyr::filter(richness_id == "M4" & density_id == "D1") %>% 
+   ggplot() + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_oebi), col = "orange") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ruhi), col = "red") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ange), col = "blue") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_mofi), col = "green") +
+   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
+   labs(x = NULL, y = NULL) + 
+   scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
+   ylim(0, 3.0) + 
+   theme_bw() 
+)
+
+## M4 D2 -----------------------------------------------------------------------
+
+(plot_m4_d2 <- c_germ_perc_tidy2 %>%
+   dplyr::filter(richness_id == "M4" & density_id == "D2") %>% 
+   ggplot() + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_oebi), col = "orange") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ruhi), col = "red") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ange), col = "blue") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_mofi), col = "green") +
+   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
+   scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
+   labs(x = NULL, y = NULL) + 
+   ylim(0, 11.0) + 
+   theme_bw() + 
+   theme(axis.title.x = element_text(
+     size = 20, 
+     margin = margin(t = 10, r = 0, b = 0, l = 0)))
+)
+
+## M4 D3 -----------------------------------------------------------------------
+
+(plot_m4_d3 <- c_germ_perc_tidy2 %>%
+   dplyr::filter(richness_id == "M4" & density_id == "D3") %>% 
+   ggplot() + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_oebi), col = "orange") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ruhi), col = "red") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_ange), col = "blue") + 
+   geom_line(aes(x = week, y = mean_cum_perc_germ_mofi), col = "green") +
+   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
+   scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
+   labs(x = NULL, y = NULL) + 
+   ylim(0, 20) + 
+   theme_bw() 
+)
+
+## multipanel figure -----------------------------------------------------------
+
+(plot_cum_germ <- (plot_m1_d1 + plot_m1_d2 + plot_m1_d3) /
+                  (plot_m2_d1 + plot_m2_d2 + plot_m2_d3) /
+                  (plot_m4_d1 + plot_m4_d2 + plot_m4_d3)
+)
+
+# save to disk -----------------------------------------------------------------
+
+ggsave(
+  plot = plot_cum_germ, 
+  filename = here("output", "results", "germ_curves.png"), 
+  device = "png", 
+  units = "in", 
+  height = 6, 
+  width = 8
+)
