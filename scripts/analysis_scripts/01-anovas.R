@@ -4,11 +4,13 @@ library(here)           # for creating relative file paths
 library(ggplot2)        # for visualizing data
 library(emmeans)        # for doing pairwise comparisons
 library(stringr)        # for manipulating string characters
-library(patchwork)      # for creating multipanel figures
+library(patchwork)      # for creating multi-panel figures
+library(mgcv)           # for test non-linear relationships 
 
 # import -----------------------------------------------------------------------
 
 sem_df <- read.csv(here("data", "analysis_data", "sem.csv"))
+bm_raw <- read.csv(here("data", "input_data", "biomass.csv"))
 
 # clean data -------------------------------------------------------------------
 
@@ -46,6 +48,59 @@ mono_ab <- sem_df %>%
     res_root_bm_g,
     inv_roots_bm_g) 
 
+mono_ab_inv_bm <- sem_df %>%
+  dplyr::filter(richness_id == "M1") %>%
+  mutate(
+    
+    # codes for species identity
+    # O = Oenothera biennis, 
+    # M = Monarda fistulosa, 
+    # A = Andropogon gerardii, 
+    # H = Heliopsis helianthoides, 
+    # R = Rudbeckia hirta
+    spp_identity = substr(rep, start = 1, stop = 1),
+    rep_spp = substr(rep, start = 2, stop = 2),
+    
+    # convert into factors
+    density_id = factor(density_id),
+    spp_identity = factor(spp_identity)
+  ) %>%
+  dplyr::select(
+    density_id, spp_identity, rep_spp, inv_abg_bm_g
+  )
+
+bm_tidy <- bm_raw %>%
+  dplyr::filter(Density_ID == "-" & Biomass_Type == "AB") %>%
+  mutate(
+    Biomass_g = na_if(Biomass_g, "-"),
+    Biomass_g = as.numeric(Biomass_g)
+  ) %>%
+  group_by(Density_ID, Rep) %>%
+  summarize(biomass = sum(Biomass_g, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    Density_ID = case_when(
+      Density_ID == "-" ~ "D0", 
+      TRUE ~ Density_ID
+    ), 
+    Rep = substr(Rep, start = 2, stop = 2),
+    spp_identity = "None"
+    ) %>%
+  dplyr::select(
+    density_id = Density_ID, 
+    spp_identity, 
+    rep_spp = Rep, 
+    inv_abg_bm_g = biomass
+  )
+
+inv_bm <- rbind(bm_tidy, mono_ab_inv_bm)
+
+lm_inv_bm_int <- lm(inv_abg_bm_g ~ spp_identity*density_id, data = inv_bm)
+
+aov_inv_bm <- aov(lm_inv_bm)
+
+emm_inv_bm <- emmeans(lm_inv_bm, ~"spp_identity")
+
 # statistical analyses: ANOVAs -------------------------------------------------
 
 ## native: percent seedling emergence ------------------------------------------
@@ -61,6 +116,15 @@ summary(aov_mono_perc_res)
 
 emm_mono_perc_res <- emmeans(lm_mono_perc_res, spec = "spp_identity")
 pairs_mono_perc_res <- pairs(emm_mono_perc_res)
+
+# get backtransformed emmeans
+emm_mono_perc_res_df <- data.frame(emm_mono_perc_res)
+emm_mono_perc_res_df <- emm_mono_perc_res_df %>%
+  mutate(
+    back_emmean = boot::inv.logit(emmean), 
+    back_lcl    = boot::inv.logit(asymp.LCL),
+    upper_lcl   = boot::inv.logit(asymp.UCL)
+  )
 
 cld_perc_res <- multcomp::cld(emm_mono_perc_res)
 cld_perc_res_df <- cld_perc_res %>%
@@ -104,7 +168,7 @@ plot(lm_mono_perc)
 aov_mono_ab <- aov(lm_mono_perc)
 summary(aov_mono_ab)
 
-## invader: biomass ------------------------------------------------------------
+## monocultures: invader biomass -----------------------------------------------
 
 # model fit
 lm_mono_ab <- lm(log_inv_bm ~ spp_identity*density_id, data = mono_ab) 
@@ -138,8 +202,9 @@ cld_spp_id_df <- cld_spp_id %>%
     spp_identity = forcats::fct_reorder(spp_identity, back_emm, .desc = FALSE)
     ) 
 
-## statistical analysis: regression --------------------------------------------
+## invader: root biomass -------------------------------------------------------
 
+# relationship between aboveground and root biomass of resident community
 lm_res_ab_bm <- lm(res_root_bm_g ~ res_abg_bm_g, data = sem_df)
 plot(lm_res_ab_bm)
 
@@ -150,7 +215,8 @@ lm_inv_res_bm <- lm(inv_roots_bm_g ~ res_abg_bm_g, data = sem_df)
 
 AIC(gam_inv_res_bm, lm_inv_res_bm)
 
-gam.check(gam_inv_res_bm)
+par(mfrow = c(2,2))
+mgcv::gam.check(gam_inv_res_bm)
 
 # visualize data ---------------------------------------------------------------
 
@@ -204,26 +270,51 @@ gam.check(gam_inv_res_bm)
 
 ## root biomass ----------------------------------------------------------------
 
-plot_res_ab_vs_res_bm <- sem_df %>%
+# get summary statistics from lm model object
+rsq_res_ab_bm <- as.character(round(summary(lm_res_ab_bm)$adj.r.squared, digits = 2))
+p_res_ab_bm <- summary(lm_res_ab_bm)$coefficients["res_abg_bm_g", "Pr(>|t|)"]
+p_res_ab_bm <- ifelse(p_res_ab_bm<0.001, "p<0.001")
+
+(plot_res_ab_vs_res_bm <- sem_df %>%
   ggplot(aes(x = res_abg_bm_g, y = res_root_bm_g)) + 
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) + 
+  geom_text(label = "A)", x = 0.1, y = 17.5) + 
+  geom_text(
+    label = paste("~adj-R^{2} ==",  rsq_res_ab_bm), 
+    x = 11.2, 
+    y = 16, 
+    parse = TRUE
+  ) + 
+  geom_text(label = paste("OLS:", p_res_ab_bm), x = 11.5, y = 17) + 
   labs(
     x = "Aboveground biomass of native community (in grams)", 
     y = "Root biomass of native community (in grams)"
     ) + 
   theme_bw()
+)
 
-plot_res_bm_vs_inv_root <- sem_df %>%
+# get summary statistics from gam model object
+rsq_gam_inv_bm <- as.character(round(summary(gam_inv_res_bm)$r.sq, digits = 2))
+edf_gam_inv_bm <- as.character(round(summary(gam_inv_res_bm)$edf, digits = 2))
+p_gam_inv_bm <- summary(gam_inv_res_bm)$s.table[, "p-value"]
+p_gam_inv_bm <- ifelse(p_gam_inv_bm < 0.001, "p<0.001")  
+  
+(plot_res_bm_vs_inv_root <- sem_df %>%
   ggplot(aes(x = res_abg_bm_g, y = inv_roots_bm_g)) + 
   geom_point() + 
   geom_smooth(method = "gam", se = FALSE) +
+  geom_text(label = "B)", x = 0.2, y= 7.1) + 
+  geom_text(label = paste("GAM:", "edf = ", edf_gam_inv_bm, ",", p_gam_inv_bm), x = 10, y = 7) + 
+  geom_text(label = paste("adj-R^{2} == ", rsq_gam_inv_bm), x = 10, y = 6.5, parse = TRUE) + 
   labs(
     x = "Aboveground biomass of native community (in grams)",
-    y = "Invader root biomass (in grams)") + 
+    y = expression(paste("Root biomass of ", italic("Cirsium arvense")," (in grams)"))
+    ) + 
   theme_bw()
+)
 
-plot_res_bm <- plot_res_ab_vs_res_bm + plot_res_bm_vs_inv_root
+(plot_inv_roots <- plot_res_ab_vs_res_bm + plot_res_bm_vs_inv_root)
 
 ## save to disk ----------------------------------------------------------------
 
@@ -235,6 +326,16 @@ ggsave(
   height = 5, 
   width = 8
 )
+
+ggsave(
+  plot = plot_inv_roots, 
+  filename = here("output", "results", "inv_roots.png"), 
+  device = "png", 
+  units = "in", 
+  height = 5, 
+  width = 9
+)
+
 
 
   
