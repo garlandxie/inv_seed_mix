@@ -207,6 +207,26 @@ c_gs2 <- c_gs2 %>%
   mutate(c_gs2, mgt = ger_MGT(evalName = "W", data = .),
   ) 
 
+# calculate mean germination rate per species
+c_gs_sp <- c_gs2 %>%
+  dplyr::filter(!(spp %in% c("CIAR"))) %>%
+  group_by(richness_id, density_id, rep, spp) %>%
+  summarize(
+    mean_mgt = mean(mgt, na.rm = TRUE),
+    mean_mgr = 1/mean_mgt,
+    mean_mgr = round(mean_mgr, digits = 2)
+  ) %>%
+  ungroup() %>%
+  select(-mean_mgt) %>%
+  dplyr::filter(richness_id %in% c("M2", "M4")) %>%
+  tidyr::pivot_wider(names_from = spp, values_from = mean_mgr)
+  
+(plot_mean_mgr <- c_gs_sp %>%
+  ggplot(aes(x = rep, y = mean_mgr, fill = spp)) + 
+  geom_col() + 
+  facet_wrap(richness_id ~ density_id)
+)
+
 # calculate germination speed and mean germination time per tray
 # for the resident community 
 c_gs_res <- c_gs2 %>%
