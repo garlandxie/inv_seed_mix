@@ -3,7 +3,7 @@ library(dplyr)          # for manipulating data
 library(here)           # for creating relative file paths
 library(piecewiseSEM)   # for calculating piecewise structural equation models
 library(ggplot2)        # for obtaining partial residuals
-library(patchwork)
+library(patchwork)      # for visualizing plots
 
 # import -----------------------------------------------------------------------
 
@@ -20,7 +20,9 @@ glm_res_germ <- glm(
   weights = sown_seeds_res, 
   data = sem_df
   )
- 
+
+summary(glm_res_germ)
+
 ## germination speed (resident) <- richness + density --------------------------
 
 # model fit
@@ -52,15 +54,6 @@ summary(lm_res_abg_bm)
 lm_res_sr <- lm(realized_sr ~ cum_germ_perc_res + richness_id, data = sem_df)
 
 summary(lm_res_sr)
-
-## root biomass (resident) <- % germination ------------------------------------
-
-lm_res_root_bm <- lm(
-  res_root_bm_g ~ cum_germ_perc_res, 
-  data = sem_df
-)
-
-summary(lm_res_root_bm)
 
 ## CWM SLA (resident) <- community biomass (resident) --------------------------
 
@@ -127,7 +120,7 @@ sem_germ <- piecewiseSEM::psem(
   lm_inv_bm
 )
 
-summary_psem <- summary(sem_germ, conserve = TRUE) 
+summary_sem_germ <- summary(sem_germ, conserve = TRUE)
 
 dSep1 <- sem_germ %>%
   piecewiseSEM::dSep(conserve = TRUE) %>%
@@ -222,23 +215,20 @@ dSep4 <- rev_sem_germ4 %>%
   data.frame() %>%
   mutate(run = 4)
 
-## 7. CWM SLA (resident) <- .~. species richness (resident) --------------------
+## 9. Percent germination <- .~. height (resident) -----------------------------
 
-glm_res_sla3 <- update(glm_res_sla2, .~. + realized_sr)
-
-# double-check collinearity
-car::vif(glm_res_sla3)
+glm_res_germ2 <- update(glm_res_germ, .~. + mean_rgr_height_res)
 
 ## 8. run piecewise SEM 5 ------------------------------------------------------
 
 rev_sem_germ5 <- piecewiseSEM::psem(
   
   # resident community 
-  glm_res_germ,
+  glm_res_germ2,
   glm_res_mgr2,
   lm_res_height,
   lm_res_abg_bm,
-  glm_res_sla3,
+  glm_res_sla2,
   lm_res_sr,
   
   # invader
@@ -253,9 +243,12 @@ dSep5 <- rev_sem_germ5 %>%
   data.frame() %>%
   mutate(run = 5)
 
-## 9. Percent germination <- .~. height (resident) -----------------------------
+## 7. CWM SLA (resident) <- .~. species richness (resident) --------------------
 
-glm_res_germ2 <- update(glm_res_germ, .~. + mean_rgr_height_res)
+glm_res_sla3 <- update(glm_res_sla2, .~. + realized_sr)
+
+# double-check collinearity
+car::vif(glm_res_sla3)
 
 ## 10. final piecewise SEM -----------------------------------------------------
 
@@ -279,6 +272,7 @@ rev_summary_psem6 <- summary(rev_sem_germ6, conserve = TRUE)
 stand_coefs <- piecewiseSEM::coefs(rev_sem_germ6, standardize = "range", 
                                    standardize.type = "Menard.OE")
 
+
 # data visualization -----------------------------------------------------------
 
 ## get partial residuals -------------------------------------------------------
@@ -301,6 +295,17 @@ visreg_sla <- visreg::visreg(
   lm_inv_bm, "wds_sla", 
   type= "conditional") 
 
+
+visreg_cum_germ <- visreg::visreg(
+  glm_res_germ2, "mean_mgr", 
+  type = "conditional"
+)
+
+visreg_res_height <- visreg::visreg(
+  glm_res_germ2, "mean_rgr_height_res", 
+  type = "conditional"
+)
+
 ## plot wds sla ----------------------------------------------------------------
 
 # partial R2
@@ -308,7 +313,7 @@ part2_res_sla <- sensemakr::partial_r2(glm_res_sla3)
 
 # p-values for each predictor variable
 sum_res_sla <- summary(glm_res_sla3)
-
+89
 p_bm <- sum_res_sla$coefficients["res_abg_bm_g", "Pr(>|t|)"] 
 p_bm <- ifelse(p_bm < 0.01, "p<0.01")
 
@@ -324,7 +329,6 @@ p_sr <- ifelse(p_sr < 0.001, "p<0.001")
   # partial residuals
   geom_point(
     aes(x = res_abg_bm_g, y = visregRes), 
-    alpha = 0.5, 
     data = visreg_wds_res$res
     ) +
    
@@ -335,13 +339,13 @@ p_sr <- ifelse(p_sr < 0.001, "p<0.001")
      linewidth = 0.75, 
      data = visreg_wds_res$fit
    ) +
-   geom_ribbon(
-     aes(x = res_abg_bm_g, y = visregFit,
-         ymin = visregLwr, ymax = visregUpr), 
-     col = "grey", 
-     alpha = 0.1, 
-     data = visreg_wds_res$fit
-   ) + 
+   #geom_ribbon(
+   #   aes(x = res_abg_bm_g, y = visregFit,
+   #      ymin = visregLwr, ymax = visregUpr), 
+   #  col = "grey", 
+   #   alpha = 0.1, 
+   # data = visreg_wds_res$fit
+   #) + 
    
   labs(
     x = "Aboveground community biomass (g)",
@@ -380,7 +384,6 @@ p_sr <- ifelse(p_sr < 0.001, "p<0.001")
     # partial residuals 
     geom_point(
       aes(x = cum_germ_perc_res, y = visregRes), 
-      alpha = 0.5,
       data = visreg_wds_germ$res
     ) + 
     
@@ -391,13 +394,13 @@ p_sr <- ifelse(p_sr < 0.001, "p<0.001")
       linewidth = 0.75, 
       data = visreg_wds_germ$fit
     ) +
-    geom_ribbon(
-      aes(x = cum_germ_perc_res, y = visregFit,
-          ymin = visregLwr, ymax = visregUpr), 
-      col = "grey", 
-      alpha = 0.1, 
-      data = visreg_wds_germ$fit
-    ) + 
+    #geom_ribbon(
+    #  aes(x = cum_germ_perc_res, y = visregFit,
+    #      ymin = visregLwr, ymax = visregUpr), 
+    #  col = "grey", 
+    #  alpha = 0.1, 
+    #  data = visreg_wds_germ$fit
+    #) + 
     
   # add annotations
   annotate("text", x = 0.1, y = 0.25, label = "B)") + 
@@ -432,7 +435,6 @@ p_sr <- ifelse(p_sr < 0.001, "p<0.001")
   # partial residuals
   geom_point(
     aes(x = realized_sr, y = visregRes), 
-    alpha = 0.5, 
     data = visreg_wds_sr$res
   ) + 
   
@@ -443,13 +445,13 @@ p_sr <- ifelse(p_sr < 0.001, "p<0.001")
     linewidth = 0.65, 
     data = visreg_wds_sr$fit
     ) +
-  geom_ribbon(
-    aes(x = realized_sr, y = visregFit,
-        ymin = visregLwr, ymax = visregUpr), 
-    col = "grey", 
-    alpha = 0.1, 
-    data = visreg_wds_sr$fit
-    ) +
+  #geom_ribbon(
+  #  aes(x = realized_sr, y = visregFit,
+  #      ymin = visregLwr, ymax = visregUpr), 
+  #  col = "grey", 
+  #  alpha = 0.1, 
+  #  data = visreg_wds_sr$fit
+  #  ) +
   annotate("text", x = 1.2, y = 0.25, label = "C)") + 
   annotate(
     "text", 
@@ -510,26 +512,25 @@ p_inv_bm <- ifelse(p_inv_bm < 0.001, "<0.001")
     linewidth = 0.75, 
     data = visreg_sla$fit
   ) +
-  geom_ribbon(
-    aes(x = wds_sla, y = visregFit,
-        ymin = visregLwr, ymax = visregUpr), 
-    col = "grey", 
-    alpha = 0.1, 
-    data = visreg_sla$fit
-  ) + 
+  #geom_ribbon(
+  #  aes(x = wds_sla, y = visregFit,
+  #      ymin = visregLwr, ymax = visregUpr), 
+  #  col = "grey", 
+  #  alpha = 0.1, 
+  # data = visreg_sla$fit
+  #) + 
   annotate(
      "text", 
      x = 0.20, 
      y = 4.9, 
-     label = paste("partial R2:", round(part2_inv_bm["wds_sla"], digits = 2))
+     label = paste(
+       "partial R2:", round(part2_inv_bm["wds_sla"], digits = 2))
    ) + 
   annotate(
      "text", 
-     x = 0.185, 
+     x = 0.19, 
      y = 4.6, 
-     label = paste0(
-       "F(", f_inv_bm["numdf"], ",", f_inv_bm["dendf"], ")", " = ",
-       round(f_inv_bm["value"], digits = 2), ", p", p_inv_bm)
+     label = paste0("p", p_inv_bm)
    ) + 
   labs(
     x = expression(paste("| CWM SLA - ", italic("Cirsium arvense"), " |")),
@@ -540,36 +541,27 @@ p_inv_bm <- ifelse(p_inv_bm < 0.001, "<0.001")
 
 ## plot early plant stage ------------------------------------------------------
 
-visreg_cum_germ <- visreg::visreg(
-  glm_res_germ2, "mean_mgr", 
-  type = "conditional"
-)
-
-visreg_res_height <- visreg::visreg(
-  glm_res_germ2, "mean_rgr_height_res", 
-  type = "conditional"
-)
-
 (plot_mgr_germ <- ggplot() +
-  geom_rug(aes(x = mean_mgr), data = visreg_cum_germ$res) + 
+  geom_rug(
+    aes(x = mean_mgr), 
+    data = visreg_mgr_height$res
+    ) + 
   geom_line(
-    aes(x = mean_mgr, y = exp(visregFit)), 
+    aes(x = mean_mgr, y = visregFit), 
     col = "blue", 
     data = visreg_cum_germ$fit
     ) + 
     geom_ribbon(
-      aes(x = mean_mgr, y = exp(visregFit),
-          ymin = exp(visregLwr), ymax = exp(visregUpr)
-          ), 
+      aes(x = mean_mgr, y = visregFit,
+          ymin = visregLwr, ymax = visregUpr), 
       col = "grey", 
       alpha = 0.1, 
       data = visreg_cum_germ$fit
     ) + 
-   annotate("text", x = 0.12, y = 0.7, label = "A)") + 
-   ylim(0.3, 0.7) + 
+   annotate("text", x = 0.13, y = -0.4, label = "A)") + 
    labs(
-     x = "Mean Germination Rate", 
-     y = "Odds of higher germinability") + 
+     x = "Mean germination rate", 
+     y = "Germinability") + 
    theme_bw()
 )
 
@@ -579,8 +571,8 @@ visreg_mgr_height <- visreg::visreg(
 )
 
 (plot_mgr <- ggplot() + 
-    geom_point(
-      aes(x = mean_rgr_height_res, y = visregRes), 
+    geom_rug(
+      aes(x = mean_rgr_height_res), 
       data = visreg_mgr_height$res
       )  + 
     geom_line(
@@ -596,9 +588,9 @@ visreg_mgr_height <- visreg::visreg(
       alpha = 0.1, 
       data = visreg_mgr_height$fit
     ) + 
-   annotate("text", x = 0.0015, y = -0.5, label = "B)") + 
+   annotate("text", x = 0.003, y = 0.31, label = "B)") + 
    labs(
-    x = "RGR height (resident)",
+    x = "RGR height",
     y = "Mean germination rate") + 
   theme_bw()
 )
@@ -606,49 +598,90 @@ visreg_mgr_height <- visreg::visreg(
 (plot_height <- ggplot() + 
     geom_rug(aes(x = mean_rgr_height_res), data = visreg_res_height$res) + 
     geom_line(
-      aes(x = mean_rgr_height_res, y = exp(visregFit)), 
+      aes(x = mean_rgr_height_res, y = visregFit), 
       col = "blue", 
       data = visreg_res_height$fit
     ) + 
     geom_ribbon(
-      aes(x = mean_rgr_height_res, y = exp(visregFit),
-          ymin = exp(visregLwr), ymax = exp(visregUpr)
-      ), 
+      aes(x = mean_rgr_height_res, y = visregFit,
+          ymin = visregLwr, ymax = visregUpr), 
       col = "grey", 
       alpha = 0.1, 
       data = visreg_res_height$fit
     ) + 
-    annotate("text", x = 0.0015, y = 0.51, label = "C)") + 
+    annotate("text", x = 0.003, y = -0.68, label = "C)") + 
     labs(
-      x = "RGR height (resident)",
-      y = "Odds of higher germinability") + 
+      x = "RGR height",
+      y = "Germinability") + 
     theme_bw()
 )
 
+# get compact letter displays
 res_height_emm <- emmeans::emmeans(lm_res_height, "density_id")
-multcomp::cld(res_height_emm)
+cld_res_height <- res_height_emm %>%
+  multcomp::cld() %>%
+  as.data.frame() %>%
+  rename(
+    mean_rgr_height_res = emmean, 
+    CLD = `.group`) %>%
+  mutate(
+    CLD = case_when(
+      CLD == " 1 " ~ "A", 
+      CLD == "  2" ~ "B",
+      TRUE ~ CLD),
+    
+     density_id = case_when(
+      density_id == "D1" ~ "48", 
+      density_id == "D2" ~ "200", 
+      density_id == "D3" ~ "400", 
+      TRUE ~ density_id), 
+    
+    density = factor(density_id, levels = c("48", "200", "400"))
+  )
 
 (plot_rich_dens <- sem_df %>% 
+    mutate(
+      density_id = case_when(
+        density_id == "D1" ~ "48", 
+        density_id == "D2" ~ "200", 
+        density_id == "D3" ~ "400", 
+        TRUE ~ density_id),
+      
+      density_id = factor(density_id, levels = c("48", "200", "400"))
+    ) %>%
     ggplot(aes(x = density_id, y = mean_rgr_height_res)) + 
     geom_boxplot() + 
     geom_jitter(width = 0.1, alpha = 0.1) + 
+    geom_text(
+      aes(x = density_id, y = mean_rgr_height_res, label = CLD),
+      nudge_x = 0.2, 
+      nudge_y = 0.01, 
+      data = cld_res_height) + 
+    annotate("text", x = 0.6, y = 0.069, label = "D)") + 
     labs(
       x = "Seeding density", 
-      y = "RGR height (resident)"
+      y = "RGR height"
       ) + 
     theme_bw() 
 )
 
 (plot_early <- plot_mgr_germ + plot_mgr + plot_height + plot_rich_dens)
 
-# save to disk ----------------------------------------------------------------
+# gam --------------------------------------------------------------------------
+
+# model fit
+gam_res_germ <- mgcv::gam(
+  cum_germ_perc_res ~ s(mean_mgr) + mean_rgr_height_res,
+  data = sem_df
+)
+
+# save to disk -----------------------------------------------------------------
 
 ggsave(
   plot = plot_sla_v_inv, 
   filename = here("output", "results", "fig_sla_v_inv.png"), 
   device = "png", 
   units = "in", 
-  height = 5, 
   width = 5
 )
 
@@ -659,4 +692,13 @@ ggsave(
   units = "in", 
   height = 4, 
   width = 10
+)
+
+ggsave(
+  plot = plot_early,
+  filename = here("output", "results", "fig_early.png"),
+  device = "png", 
+  units = "in", 
+  height = 5, 
+  width = 6
 )
