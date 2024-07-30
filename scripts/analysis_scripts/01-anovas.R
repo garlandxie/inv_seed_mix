@@ -2,10 +2,10 @@
 library(dplyr)          # for manipulating data
 library(here)           # for creating relative file paths
 library(ggplot2)        # for visualizing data
-library(emmeans)        # for doing pairwise comparisons
 library(stringr)        # for manipulating string characters
 library(patchwork)      # for creating multi-panel figures
 library(mgcv)           # for test non-linear relationships 
+library(broom)          # for tidying lm objects
 
 # import -----------------------------------------------------------------------
 
@@ -33,6 +33,7 @@ mono_ab <- sem_df %>%
     # convert into factors
     density_id = factor(density_id),
     spp_identity = factor(spp_identity)
+    
   ) %>%
   select(
     density_id, 
@@ -93,13 +94,12 @@ bm_tidy <- bm_raw %>%
     inv_abg_bm_g = biomass
   )
 
-inv_bm <- rbind(bm_tidy, mono_ab_inv_bm)
+mix_inv_bm <- sem_df %>%
+  dplyr::filter(richness_id %in% c("M2", "M4")) %>%
+  select(density_id, spp_identity = richness_id, rep_spp = rep, inv_abg_bm_g)
 
-lm_inv_bm_int <- lm(inv_abg_bm_g ~ spp_identity*density_id, data = inv_bm)
 
-aov_inv_bm <- aov(lm_inv_bm)
-
-emm_inv_bm <- emmeans(lm_inv_bm, ~"spp_identity")
+inv_bm <- rbind(bm_tidy, mono_ab_inv_bm, mix_inv_bm)
 
 # statistical analyses: ANOVAs -------------------------------------------------
 
@@ -168,39 +168,115 @@ plot(lm_mono_perc)
 aov_mono_ab <- aov(lm_mono_perc)
 summary(aov_mono_ab)
 
-## monocultures: invader biomass -----------------------------------------------
+## invader: aboveground biomass ------------------------------------------------
+
+# clean data 
+inv_bm_d0_d1 <- inv_bm %>%
+  dplyr::filter(density_id %in% c("D0", "D1")) %>%
+  mutate(spp_identity = factor(
+    spp_identity, levels = c("None","O", "A", "R", "M", "H", "M2", "M4"))
+    )
+
+inv_bm_d0_d2 <- inv_bm %>%
+  dplyr::filter(density_id %in% c("D0", "D2")) %>%
+  mutate(spp_identity = factor(
+    spp_identity, levels = c("None","O", "A", "R", "M", "H", "M2", "M4"))
+  )
+
+inv_bm_d0_d3 <- inv_bm %>%
+  dplyr::filter(density_id %in% c("D0", "D3")) %>%
+  mutate(spp_identity = factor(
+    spp_identity, levels = c("None","O", "A", "R", "M", "H", "M2", "M4"))
+  )
 
 # model fit
-lm_mono_ab <- lm(log_inv_bm ~ spp_identity*density_id, data = mono_ab) 
-plot(lm_mono_ab)
+lm_inv_bm_d0_d1 <- lm(inv_abg_bm_g ~ spp_identity, data = inv_bm_d0_d1) 
+lm_inv_bm_d0_d2 <- lm(log(inv_abg_bm_g) ~ spp_identity, data = inv_bm_d0_d2) 
+lm_inv_bm_d0_d3 <- lm(log(inv_abg_bm_g) ~ spp_identity, data = inv_bm_d0_d3) 
 
-# conduct global significance for interaction of predictor variables 
-aov_mono_ab <- aov(lm_mono_ab)
+# sanity checks
+plot(lm_inv_bm_d0_d1)
+plot(lm_inv_bm_d0_d2)
+plot(lm_inv_bm_d0_d3)
 
-# run pairwise comparisons
-emm_spp_id <- emmeans(lm_mono_ab, specs = "spp_identity")
-pairs_spp_id <- pairs(emm_spp_id)
+# run two-way ANOVA
+aov_inv_bm_d0_d1 <- summary(aov(lm_inv_bm_d0_d1))
+aov_inv_bm_d0_d2 <- summary(aov(lm_inv_bm_d0_d2))
+aov_inv_bm_d0_d3 <- summary(aov(lm_inv_bm_d0_d3))
 
-emm_density_id <- emmeans(lm_mono_ab, specs = "density_id")   
-pairs_density_id <- pairs(emm_density_id)
+# visualize the data 
+broom_inv_bm_d0_d1 <- lm_inv_bm_d0_d1 %>%
+  broom::tidy() %>%
+  mutate(density_id = "D1")
 
-# obtain compact letter displays
-cld_spp_id <- multcomp::cld(emm_spp_id)
-cld_spp_id_df <- cld_spp_id %>%
-  data.frame() %>%
-  janitor::clean_names() %>%
-  mutate(
-    back_emm = exp(emmean),
-    back_low_cl = exp(lower_cl), 
-    back_upper_cl = exp(upper_cl), 
-    group = as.character(group), 
-    group = stringr::str_replace(group, pattern = "1", replace = "A"),
-    group = stringr::str_replace(group, pattern = "2", replace = "B"),
-    group = stringr::str_replace(group, pattern = "3", replace = "C"),
-    group = stringr::str_replace(group, pattern = "4", replace = "D"),
-    group = stringr::str_trim(group), 
-    spp_identity = forcats::fct_reorder(spp_identity, back_emm, .desc = FALSE)
-    ) 
+broom_inv_bm_d0_d2 <- lm_inv_bm_d0_d2 %>%
+  broom::tidy() %>%
+  mutate(density_id = "D2")
+
+broom_inv_bm_d0_d3 <- lm_inv_bm_d0_d3 %>%
+  broom::tidy() %>%
+  mutate(density_id = "D3")
+
+ci_inv_bm_d0_d1 <- lm_inv_bm_d0_d1 %>%
+  confint() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "term") %>%
+  mutate(density_id = "D1")
+
+ci_inv_bm_d0_d2 <- lm_inv_bm_d0_d2 %>%
+  confint() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "term") %>%
+  mutate(density_id = "D2")
+
+ci_inv_bm_d0_d3 <- lm_inv_bm_d0_d3 %>%
+  confint() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "term") %>%
+  mutate(density_id = "D3")
+
+ci_inv_bm <- rbind(
+  ci_inv_bm_d0_d1, 
+  ci_inv_bm_d0_d2, 
+  ci_inv_bm_d0_d3
+)
+
+broom_inv_bm <- rbind(
+  broom_inv_bm_d0_d1, 
+  broom_inv_bm_d0_d2, 
+  broom_inv_bm_d0_d3
+  )
+
+tidy_inv_bm <- inner_join(broom_inv_bm, ci_inv_bm, by = c("term", "density_id"))
+
+tidy_inv_bm %>%
+ janitor::clean_names() %>%
+ dplyr::filter()
+ ggplot(aes(x = estimate, y = term)) + 
+ geom_point() + 
+ geom_pointrange(aes(xmin = x2_5_percent, xmax = x97_5_percent)) + 
+ facet_wrap(~density_id) + 
+ theme_bw() 
+  
+## mixtures: invader biomass ---------------------------------------------------
+
+# clean data 
+mixtures <- sem_df %>%
+  dplyr::filter(richness_id %in% c("M2", "M4")) %>%
+  select(density_id, spp_identity = richness_id, rep_spp = rep, inv_abg_bm_g) %>%
+  rbind(bm_tidy) %>%
+  mutate(spp_identity = factor(spp_identity, levels = c("None", "M2", "M4")))
+    
+# model fit    
+inv_bm_mix_d0_d1 <- dplyr::filter(mixtures, density_id %in% c("D0", "D1"))
+inv_bm_mix_d0_d2 <- dplyr::filter(mixtures, density_id %in% c("D0", "D2"))
+inv_bm_mix_d0_d3 <- dplyr::filter(mixtures, density_id %in% c("D0", "D3"))
+
+# sanity checks
+lm_inv_mix_d0_d1 <- lm(inv_abg_bm_g ~ spp_identity, data = inv_bm_mix_d0_d1) 
+lm_inv_mix_d0_d2 <- lm(inv_abg_bm_g ~ spp_identity, data = inv_bm_mix_d0_d2) 
+lm_inv_mix_d0_d3 <- lm(inv_abg_bm_g ~ spp_identity, data = inv_bm_mix_d0_d3) 
+
 
 ## invader: root biomass -------------------------------------------------------
 
@@ -316,7 +392,28 @@ p_gam_inv_bm <- ifelse(p_gam_inv_bm < 0.001, "p<0.001")
 
 (plot_inv_roots <- plot_res_ab_vs_res_bm + plot_res_bm_vs_inv_root)
 
-## save to disk ----------------------------------------------------------------
+# summary statistics -----------------------------------------------------------
+
+summary_inv_bm <- inv_bm %>%
+  group_by(density_id, spp_identity) %>%
+  summarize(
+    mean_inv_bm_g = mean(inv_abg_bm_g, na.rm = TRUE) %>% round(digits = 2),
+    sd_inv_bm_g = sd(inv_abg_bm_g, na.rm = TRUE) %>% round(digits = 2)
+    ) %>%
+  ungroup()
+
+perc_diff_inv_bm <- summary_inv_bm %>%
+  dplyr::filter(density_id %in% c("D0", "D1")) %>%
+  select(spp_identity,mean_inv_bm_g) %>%
+  tidyr::pivot_wider(values_from = mean_inv_bm_g, names_from = spp_identity)
+
+percent_diff <- function(old_value, new_value) {
+  ((new_value - old_value) / mean(old_value, new_value)) * 100
+}
+
+percent_diff(perc_diff_inv_bm$None, perc_diff_inv_bm$M2)
+
+# save to disk ----------------------------------------------------------------
 
 ggsave(
   plot = plot_spp_identity, 
