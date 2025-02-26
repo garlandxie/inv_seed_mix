@@ -249,14 +249,14 @@ broom_inv_bm <- rbind(
 
 tidy_inv_bm <- inner_join(broom_inv_bm, ci_inv_bm, by = c("term", "density_id"))
 
-tidy_inv_bm %>%
- janitor::clean_names() %>%
- dplyr::filter()
- ggplot(aes(x = estimate, y = term)) + 
- geom_point() + 
- geom_pointrange(aes(xmin = x2_5_percent, xmax = x97_5_percent)) + 
- facet_wrap(~density_id) + 
- theme_bw() 
+emm_inv_bm_d0_d1 <- emmeans(lm_inv_bm_d0_d1, ~"spp_identity")
+contr_inv_bm_d0_d1 <- contrast(emm_inv_bm_d0_d1, method = "trt.vs.ctrl")
+
+emm_inv_bm_d0_d2 <- emmeans(lm_inv_bm_d0_d2, ~"spp_identity")
+contr_inv_bm_d0_d2 <- contrast(emm_inv_bm_d0_d2, method = "trt.vs.ctrl")
+ 
+emm_inv_bm_d0_d3 <- emmeans(lm_inv_bm_d0_d3, ~"spp_identity")
+contr_inv_bm_d0_d3 <- contrast(emm_inv_bm_d0_d3, method = "trt.vs.ctrl")
   
 ## mixtures: invader biomass ---------------------------------------------------
 
@@ -277,7 +277,6 @@ lm_inv_mix_d0_d1 <- lm(inv_abg_bm_g ~ spp_identity, data = inv_bm_mix_d0_d1)
 lm_inv_mix_d0_d2 <- lm(inv_abg_bm_g ~ spp_identity, data = inv_bm_mix_d0_d2) 
 lm_inv_mix_d0_d3 <- lm(inv_abg_bm_g ~ spp_identity, data = inv_bm_mix_d0_d3) 
 
-
 ## invader: root biomass -------------------------------------------------------
 
 # relationship between aboveground and root biomass of resident community
@@ -290,6 +289,8 @@ gam_inv_res_bm <- mgcv::gam(inv_roots_bm_g ~ s(res_abg_bm_g), data = sem_df)
 lm_inv_res_bm <- lm(inv_roots_bm_g ~ res_abg_bm_g, data = sem_df)
 
 AIC(gam_inv_res_bm, lm_inv_res_bm)
+summary(gam_inv_res_bm)
+coef(gam_inv_res_bm)
 
 par(mfrow = c(2,2))
 mgcv::gam.check(gam_inv_res_bm)
@@ -403,7 +404,7 @@ summary_inv_bm <- inv_bm %>%
   ungroup()
 
 perc_diff_inv_bm <- summary_inv_bm %>%
-  dplyr::filter(density_id %in% c("D0", "D1")) %>%
+  dplyr::filter(density_id %in% c("D0", "D3")) %>%
   select(spp_identity,mean_inv_bm_g) %>%
   tidyr::pivot_wider(values_from = mean_inv_bm_g, names_from = spp_identity)
 
@@ -411,9 +412,36 @@ percent_diff <- function(old_value, new_value) {
   ((new_value - old_value) / mean(old_value, new_value)) * 100
 }
 
-percent_diff(perc_diff_inv_bm$None, perc_diff_inv_bm$M2)
+percent_diff(perc_diff_inv_bm$None, perc_diff_inv_bm$A)
 
-# save to disk ----------------------------------------------------------------
+# save to disk -----------------------------------------------------------------
+
+## contrasts -------------------------------------------------------------------
+
+# prep the data frame
+contr_inv_bm_d0_d1 <- as.data.frame(contr_inv_bm_d0_d1)
+contr_inv_bm_d0_d1$density_id <- "D1"
+contr_inv_bm_d0_d1$estimate <- round(contr_inv_bm_d0_d1$estimate, digits = 2)
+
+contr_inv_bm_d0_d2 <- as.data.frame(contr_inv_bm_d0_d2)
+contr_inv_bm_d0_d2$density_id <- "D2"
+contr_inv_bm_d0_d2$estimate <- round(contr_inv_bm_d0_d2$estimate, digits = 2)
+
+contr_inv_bm_d0_d3 <- as.data.frame(contr_inv_bm_d0_d3)
+contr_inv_bm_d0_d3$density_id <- "D3"
+contr_inv_bm_d0_d3$estimate <- round(contr_inv_bm_d0_d3$estimate, digits = 2)
+
+contr_inv_bm <- rbind(
+  contr_inv_bm_d0_d1, 
+  contr_inv_bm_d0_d2, 
+  contr_inv_bm_d0_d3
+  )
+
+write.csv(
+  x = contr_inv_bm, 
+  file = here("output", "data_appendix_output", "table_contrasts.csv"),
+  row.names = FALSE
+)
 
 ggsave(
   plot = plot_spp_identity, 
