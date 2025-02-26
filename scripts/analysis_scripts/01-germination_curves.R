@@ -126,6 +126,10 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
       richness_id %in% c("M1", "M2", "M4")
   ) 
 
+## emergence time -----
+
+
+
 # data visualization: cumulative percentage germination ------------------------
 
 ## M1 D1 -----------------------------------------------------------------------
@@ -140,7 +144,7 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
   geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
   scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
   labs(x = NULL, y = NULL) + 
-  ylim(0, 3.0) + 
+  ylim(0, 50) + 
   theme_bw() +
   theme(axis.text.x = element_blank())
 )
@@ -157,7 +161,7 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
    geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
    scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
    labs(x = NULL, y = NULL) + 
-   ylim(0, 11.0) + 
+   ylim(0, 50) + 
    theme_bw() + 
    theme(axis.text.x = element_blank())
 )
@@ -174,7 +178,7 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
    geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
    labs(x = NULL, y = NULL) + 
    scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
-   ylim(0, 20) + 
+   ylim(0, 50) + 
    theme_bw() +
    theme(axis.text.x = element_blank())
 )
@@ -191,7 +195,7 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
    geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") +
    scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
    labs(x = NULL, y = NULL) + 
-   ylim(0, 3.0) + 
+   ylim(0, 50) + 
    theme_bw() + 
    theme(
      axis.text.x = element_blank(),
@@ -213,7 +217,7 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
    geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
    scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
    labs(x = NULL, y = NULL) + 
-   ylim(0, 11.0) + 
+   ylim(0, 50) + 
    theme_bw() +
    theme(axis.text.x = element_blank())
 )
@@ -230,7 +234,7 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
    geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
    scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
    labs(x = NULL, y = NULL) + 
-   ylim(0, 20) + 
+   ylim(0, 50) + 
    theme_bw() + 
    theme(axis.text.x = element_blank())
 )
@@ -247,7 +251,7 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
    geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
    labs(x = NULL, y = NULL) + 
    scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
-   ylim(0, 3.0) + 
+   ylim(0, 50) + 
    theme_bw() 
 )
 
@@ -263,7 +267,7 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
    geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
    scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
    labs(x = NULL, y = NULL) + 
-   ylim(0, 11.0) + 
+   ylim(0, 50) + 
    theme_bw() + 
    theme(axis.title.x = element_text(
      size = 20, 
@@ -282,7 +286,7 @@ c_germ_perc_tidy2 <- c_germ_perc_tidy %>%
    geom_line(aes(x = week, y = mean_cum_perc_germ_hehe), col = "black") + 
    scale_x_continuous(breaks = c(2,4,6,8,10,12)) + 
    labs(x = NULL, y = NULL) + 
-   ylim(0, 20) + 
+   ylim(0, 50) + 
    theme_bw() 
 )
 
