@@ -1,11 +1,12 @@
 # libraries --------------------------------------------------------------------
-library(dplyr)
-library(ggplot2)
-library(here)
-library(emmeans)
-library(multcomp)
-library(patchwork)
-library(nlme)
+library(dplyr)       # for manipulating data
+library(ggplot2)     # for visualizing data
+library(here)        # for creating relative file-paths
+library(emmeans)     # for doing pairwise comparisons 
+library(multcomp)    # for getting compact letter displays
+library(patchwork)   # for visualizing multi-figure panels
+library(nlme)        # for running generalized least squared models
+library(car)         # for running type II ANOVAs
 
 # import data ------------------------------------------------------------------
 bm_raw <- read.csv(here("data", "input_data", "biomass.csv"))
@@ -93,22 +94,27 @@ emm_dens_by_id  <- emmeans(lm_id_dens, pairwise ~ Density_ID | spp_identity)
 emmip(emm_id_dens, spp_identity ~ Density_ID)
 emmip(emm_id_dens, Density_ID ~ spp_identity)
 
-
 # get compact letter displays
 cld_id_by_dens <- cld(emm_id_by_dens)
 cld_dens_by_id <- cld(emm_dens_by_id)
 
 ## aboveground biomass ---------------------------------------------------------
+
 lm_abg_bm_rich_den <- lm(biomass ~ Density_ID*Richness_ID, data = ab_bm_tidy)
 plot(lm_abg_bm_rich_den)
+car::ncvTest(lm_abg_bm_rich_den)
 
-aov_abg_bm_rich_den <- car::Anova(lm_abg_bm_rich_den, type = "II")
+gls_abg_bm_rich_den <- gls(biomass ~ Density_ID*Richness_ID, weights = varPower(), data = ab_bm_tidy)
+aov_abg_bm_rich_den <- car::Anova(gls_abg_bm_rich_den, type = "II")
 emmip(lm_abg_bm_rich_den, Richness_ID ~ Density_ID) 
 
-emm_abg_bm_dens <- emmeans(lm_abg_bm_rich_den, specs = "Density_ID")
-emm_abg_bm_rich <- emmeans(lm_abg_bm_rich_den, specs = "Richness_ID")
-cld_abg_bm_rich <- multcomp::cld(emm_abg_bm_rich)
-cld_abg_bm_dens <- multcomp::cld(emm_abg_bm_dens)
+emm_abg_bm_dens <- emmeans(gls_abg_bm_rich_den, specs = "Density_ID")
+pairs_abg_bm_dens <- pairs(emm_abg_bm_dens)
+cld_abg_bm_dens <- cld(emm_abg_bm_dens)
+
+emm_abg_bm_rich <- emmeans(gls_abg_bm_rich_den, specs = "Richness_ID")
+pairs_abg_bm_rich <- pairs(emm_abg_bm_rich)
+cld_abg_bm_rich <- cld(emm_abg_bm_rich)
 
 ## belowground biomass ---------------------------------------------------------
 lm_bg_bm_rich_den <- lm(biomass ~ Richness_ID*Density_ID, data = bg_bm_tidy)
@@ -117,6 +123,30 @@ plot(lm_bg_bm_rich_den)
 aov_bg_bm_rich_den <- car::Anova(lm_bg_bm_rich_den, type = "II")
 emm_bg_bm_dens <- emmeans(lm_bg_bm_rich_den, specs = "Density_ID")
 cld_bg_bm_dens <- cld(emm_bg_bm_dens)
+
+# effect sizes -----------------------------------------------------------------
+
+# for writing the results section
+calc_percent_change <- function(V1, V2) {
+  
+  perc_diff <- V2 - V1
+  abs_V2 <- abs(V1)
+  perc_change <- (perc_diff/abs_V2)*100
+  return(perc_change)
+  
+}
+
+abg_bm_dens_D1 <- cld_abg_bm_dens[3,2]
+abg_bm_dens_D2 <- cld_abg_bm_dens[2,2]
+abg_bm_dens_D3 <- cld_abg_bm_dens[1,2]
+
+abg_bm_rich_M1 <- cld_abg_bm_rich[3,2]
+abg_bm_rich_D2 <- cld_abg_bm_rich[2,2]
+abg_bm_rich_M4 <- cld_abg_bm_rich[1,2]
+
+calc_percent_change(abg_bm_dens_D1, abg_bm_dens_D2)
+calc_percent_change(abg_bm_dens_D2, abg_bm_dens_D3)
+calc_percent_change(abg_bm_rich_M1, abg_bm_rich_M4)
 
 # visualize --------------------------------------------------------------------
 
@@ -157,8 +187,8 @@ density_names <- as_labeller(
   ) %>%
   ggplot(aes(x = spp_identity, y = emmean)) + 
   labs(
-    x = "Species Identity",
-    y = "Aboveground invader biomass (in grams)") + 
+    x = "Species Identity (as monocultures)",
+    y = "Aboveground biomass of Cirsium arvense (in grams)") + 
    geom_col() + 
    geom_errorbar(aes(ymax = upper_se, ymin = lower_se), width =.3) + 
    scale_x_discrete(
@@ -177,49 +207,55 @@ density_names <- as_labeller(
 
 ## aboveground biomass ---------------------------------------------------------
 
-(plot_ab_bm <- cld_abg_bm_dens %>%
+(plot_ab_bm_by_dens <- cld_abg_bm_dens %>%
   mutate(
     upper_se = emmean + SE, 
     lower_se = emmean - SE,
     cld_letters = case_when(
-      .group == " 1 " ~ "B", 
-      .group == "  2" ~ "A",
+      .group == " 1 " ~ "A", 
+      .group == "  2" ~ "B", 
       TRUE ~ .group)
   ) %>%
   ggplot(aes(x = Density_ID, y = emmean)) + 
   geom_col() + 
   geom_errorbar(aes(ymax = upper_se, ymin = lower_se), width =.3) + 
-  annotate("text", label = "A)", x = 0.6, y = 2.5) + 
-  annotate(
-    "text", 
-    label = paste0("Seeding Density: ", ifelse(aov_abg_bm_rich_den$`Pr(>F)`[1] < 0.001, "p<0.001")),
-    x = 2.7, y = 2.5, 
-    size = 3
-  ) + 
-  annotate(
-     "text", 
-     label = paste0("Seeding Richness: ", round(aov_abg_bm_rich_den$`Pr(>F)`[2], digits = 2)),
-     x = 2.7, y = 2.4,
-     size = 3
-   ) + 
-  annotate(
-     "text", 
-     label = paste0("Density*Richness: ", round(aov_abg_bm_rich_den$`Pr(>F)`[3], digits = 2)), 
-     x = 2.7, y = 2.3,
-     size = 3
-   ) + 
-  geom_text(aes(label = cld_letters), nudge_y = 0.1, nudge_x = 0.1) + 
-  ylim(0, 2.5) + 
+  geom_text(aes(label = cld_letters), nudge_x = 0.25, nudge_y = 0.15) + 
   scale_x_discrete(
-    labels = c("48 Native Seeds", "200 Native Seeds", "400 Native Seeds")
-  ) + 
+    labels = c("48 native seeds", "200 native seeds", "400 native seeds")
+  ) +
+  ylim(0, 2) + 
   labs(
     x = "Native Seeding Density",
-    y = "Aboveground Invader Biomass (in grams)") + 
+    y = NULL) + 
   theme_bw() + 
   theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)))
 )
 
+(plot_ab_bm_by_rich <- cld_abg_bm_rich %>%
+    mutate(
+      upper_se = emmean + SE, 
+      lower_se = emmean - SE,
+      cld_letters = case_when(
+        .group == " 1 " ~ "A", 
+        .group == " 12" ~ "AB",
+        .group == "  2" ~ "B", 
+        TRUE ~ .group)
+    ) %>%
+    ggplot(aes(x = Richness_ID, y = emmean)) + 
+    geom_col() + 
+    geom_errorbar(aes(ymax = upper_se, ymin = lower_se), width =.3) + 
+    geom_text(aes(label = cld_letters), nudge_x = 0.15, nudge_y = 0.08) + 
+    scale_x_discrete(
+      labels = c("Monocultures", "2-species Mixture", "4-species Mixture")
+    ) + 
+    ylim(0, 2) + 
+    labs(
+      x = "Native Seeding Richness",
+      y = "Aboveground biomass of Cirsium arvense (in grams)") + 
+    theme_bw() + 
+    theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)))
+)
+ 
 ## belowground biomass ---------------------------------------------------------
 (plot_bg_bm <- cld_bg_bm_dens %>%
     mutate(
@@ -266,12 +302,12 @@ density_names <- as_labeller(
 
 ## multipanel figures -----------------------------------------------------------
 
-(fig <- plot_ab_bm + plot_bg_bm)
+(plot_ab_bm <- plot_ab_bm_by_rich + plot_ab_bm_by_dens)
 
 # save to disk -----------------------------------------------------------------
 ggsave(
-  plot = fig,
-  filename = here("output", "results", "inv_bm_density_id.png"), 
+  plot = plot_ab_bm,
+  filename = here("output", "results", "plot_ab_bm.png"), 
   device = "png", 
   units = "in", 
   height = 5, 
